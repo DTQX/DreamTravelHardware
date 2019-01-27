@@ -5,8 +5,8 @@
 
 //bone name , mpu AD0 pin
 // FName("upperarm_l"),FName("lowerarm_l"),FName("hand_l")
-#define upperarm_l (1)
-#define lowerarm_l (2)
-#define hand_l (3)
+#define upperarm_l (22)
+#define lowerarm_l (23)
+#define hand_l (24)
 
-int mpus[MPU_NUM] = {upperarm_l, lowerarm_l, hand_l};
+int mpuPins[MPU_NUM] = {upperarm_l, lowerarm_l, hand_l};
