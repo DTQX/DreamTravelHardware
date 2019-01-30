@@ -1,3 +1,8 @@
+/** mpu采样率 60Hz;  arduino数据发送频率 33.33Hz
+ *
+ *  
+ */
+
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
@@ -7,8 +12,14 @@
 #include "Wire.h"
 #include "BonesMap.h"
 
+// 通信相关
+#define COM_RATE (115200)   // 串口通信速率
+int8_t START_MARK 88;   // 数据包开始标志
 
-#define COM_RATE (115200)
+// 数据发送相关
+const int intervalTime = 30;    // 数据发送间隔时间
+int16_t lastQuat[MPU_NUM][4] = {0};     //储存上一次正确的quat
+unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -40,7 +51,7 @@ float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 // packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
+// uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
 
 
 
@@ -81,7 +92,7 @@ void setup() {
     }
 
     // initialize serial communication
-    Serial.begin(115200);
+    Serial.begin(COM_RATE;
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // initialize device
@@ -98,6 +109,12 @@ void setup() {
         digitalWrite(mpuPins[i], HIGH); 
     }
     
+    // 等待开始
+    Serial.println(F("\nSend any character to begin DMP programming: "));
+    while (Serial.available() && Serial.read()); // empty buffer
+    while (!Serial.available());                 // wait for data
+    while (Serial.available() && Serial.read()); // empty buffer again
+
     // load and configure the DMP
     Serial.println(F("Initializing DMP..."));
     for(int i = 0; i<MPU_NUM; i++){
@@ -150,6 +167,8 @@ void loop() {
     if (!dmpReady) return;
 
     for(int i = 0; i<MPU_NUM; i++){
+        lastSendTime = millis();
+
         // 开启mpu
         digitalWrite(mpuPins[i], LOW); 
 
@@ -173,8 +192,6 @@ void loop() {
         } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
             // wait for correct available data length, should be a VERY short wait
             while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-           
-            
 
             // 读取最新数据
             while(fifoCount / packetSize > 0){
@@ -184,25 +201,33 @@ void loop() {
                 // track FIFO count here in case there is > 1 packet available
                 // (this lets us immediately read more without waiting for an interrupt)
                 fifoCount -= packetSize;
+                
+                // mpu.dmpGetQuaternion(&q, fifoBuffer);
+                mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
 
-                mpu.dmpGetQuaternion(&q, fifoBuffer);
-                Serial.print("quat\t");
-                Serial.print(q.w);
-                Serial.print("\t");
-                Serial.print(q.x);
-                Serial.print("\t");
-                Serial.print(q.y);
-                Serial.print("\t");
-                Serial.println(q.z);
+                DEBUG_PRINT(F("get quat i:"));
+                DEBUG_PRINTLN(i);
             }
-            
-            
-        
-        
         }
+
+        //发送数据，如果是一个数据包的开始，则发送开始标志符
+        // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则返回上一次正确的数据
+        if(i == 0){
+            Serial.write(START_MARK);
+        }
+        // for(int j = 0; j < 4; j++){
+            if(Serial.write(lastQuat[i], 4) < 4){
+                DEBUG_PRINTLN("send error: less than 4!");
+            }
+        // }
 
         // 关闭mpu
         digitalWrite(mpuPins[i], HIGH); 
+
+        // 保证发送频率
+        while(lastSendTime - millis() < intervalTime);
+        
+
     }
 
         // blink LED to indicate activity
