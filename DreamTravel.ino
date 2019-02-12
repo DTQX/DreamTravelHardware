@@ -14,7 +14,7 @@
 
 // 通信相关
 #define COM_RATE (115200)   // 串口通信速率
-int8_t START_MARK 88;   // 数据包开始标志
+int8_t START_CODE 88;   // 数据包开始标志
 
 // 数据发送相关
 const int intervalTime = 30;    // 数据发送间隔时间
@@ -213,13 +213,18 @@ void loop() {
         //发送数据，如果是一个数据包的开始，则发送开始标志符
         // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则返回上一次正确的数据
         if(i == 0){
-            Serial.write(START_MARK);
+            Serial.write(START_CODE);
         }
         // for(int j = 0; j < 4; j++){
             if(Serial.write(lastQuat[i], 4) < 4){
                 DEBUG_PRINTLN("send error: less than 4!");
             }
         // }
+        // 发送数据包的结束编码
+        if(i == MPU_NUM - 1){
+            Serial.write(END_CODE);
+            
+        }
 
         // 关闭mpu
         digitalWrite(mpuPins[i], HIGH); 
