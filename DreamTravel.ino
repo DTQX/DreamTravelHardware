@@ -15,6 +15,7 @@
 // 通信相关
 #define COM_RATE (115200)   // 串口通信速率
 int8_t START_CODE 88;   // 数据包开始标志
+int8_t END_CODE 44;    // 数据表介绍标志
 
 // 数据发送相关
 const int intervalTime = 30;    // 数据发送间隔时间
@@ -223,7 +224,6 @@ void loop() {
         // 发送数据包的结束编码
         if(i == MPU_NUM - 1){
             Serial.write(END_CODE);
-            
         }
 
         // 关闭mpu
