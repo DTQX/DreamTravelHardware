@@ -204,7 +204,7 @@ void loop() {
                 fifoCount -= packetSize;
                 
                 // mpu.dmpGetQuaternion(&q, fifoBuffer);
-                mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
+                // mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
 
                 DEBUG_PRINT(F("get quat i:"));
                 DEBUG_PRINTLN(i);
@@ -217,9 +217,10 @@ void loop() {
             Serial.write(START_CODE);
         }
         // for(int j = 0; j < 4; j++){
-            if(Serial.write(lastQuat[i], 4) < 4){
-                DEBUG_PRINTLN("send error: less than 4!");
-            }
+        Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+        Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+        Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+        Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
         // }
         // 发送数据包的结束编码
         if(i == MPU_NUM - 1){
