@@ -14,8 +14,8 @@
 
 // 通信相关
 #define COM_RATE (115200)   // 串口通信速率
-int8_t START_CODE 88;   // 数据包开始标志
-int8_t END_CODE 44;    // 数据表介绍标志
+const uint8_t START_CODE=88;   // 数据包开始标志
+const uint8_t END_CODE=44;    // 数据表介绍标志
 
 // 数据发送相关
 const int intervalTime = 30;    // 数据发送间隔时间
@@ -101,60 +101,70 @@ void setup() {
     for(int i = 0; i<MPU_NUM; i++){
         // 开启mpu
         digitalWrite(mpuPins[i], LOW); 
+         //delay(500);
         // mpu sample rate  200Hz
         mpu.initialize();
         Serial.print(mpuPins[i]);
-        Serial.print("--")
+        Serial.print("--");
         Serial.println(mpu.testConnection() ? F("connect success") : F("connect fail"));
+        Serial.println();
+
+        // load and configure the DMP
+        Serial.println(F("Initializing DMP..."));
+        // for(int i = 0; i<MPU_NUM; i++){
+            // 开启mpu
+            // digitalWrite(mpuPins[i], LOW); 
+            //  //delay(500);
+            devStatus = mpu.dmpInitialize();
+            // supply your own gyro offsets here, scaled for min sensitivity
+            mpu.setXGyroOffset(220);
+            mpu.setYGyroOffset(76);
+            mpu.setZGyroOffset(-85);
+            // mpu.setXGyroOffset(0);
+            // mpu.setYGyroOffset(0);
+            // mpu.setZGyroOffset(0);
+            mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+
+            // make sure it worked (returns 0 if so)
+            if (devStatus == 0) {
+                // turn on the DMP, now that it's ready
+                Serial.println(F("Enabling DMP... "));
+                Serial.print(mpuPins[i]);
+                mpu.setDMPEnabled(true);
+                mpuIntStatus = mpu.getIntStatus();
+                dmpReady = dmpReady && true;
+                // get expected DMP packet size for later comparison
+                packetSize = mpu.dmpGetFIFOPacketSize();
+            } else {
+                // ERROR!
+                // 1 = initial memory load failed
+                // 2 = DMP configuration updates failed
+                // (if it's going to break, usually the code will be 1)
+                dmpReady = dmpReady && false;
+                Serial.print(mpuPins[i]);
+                Serial.print(F("DMP Initialization failed (code "));
+                Serial.print(devStatus);
+                Serial.println(F(")"));
+            }
+
+            Serial.println();
+            // 关闭mpu
+            // digitalWrite(mpuPins[i], HIGH);
+            // //delay(500);
+        // }
+        
         // 关闭mpu
         digitalWrite(mpuPins[i], HIGH); 
+        //delay(500);
     }
     
     // 等待开始
-    Serial.println(F("\nSend any character to begin DMP programming: "));
-    while (Serial.available() && Serial.read()); // empty buffer
-    while (!Serial.available());                 // wait for data
-    while (Serial.available() && Serial.read()); // empty buffer again
+    // Serial.println(F("\nSend any character to begin DMP programming: "));
+    // while (Serial.available() && Serial.read()); // empty buffer
+    // while (!Serial.available());                 // wait for data
+    // while (Serial.available() && Serial.read()); // empty buffer again
 
-    // load and configure the DMP
-    Serial.println(F("Initializing DMP..."));
-    for(int i = 0; i<MPU_NUM; i++){
-        // 开启mpu
-        digitalWrite(mpuPins[i], LOW); 
-        devStatus = mpu.dmpInitialize();
-        // supply your own gyro offsets here, scaled for min sensitivity
-        mpu.setXGyroOffset(220);
-        mpu.setYGyroOffset(76);
-        mpu.setZGyroOffset(-85);
-        // mpu.setXGyroOffset(0);
-        // mpu.setYGyroOffset(0);
-        // mpu.setZGyroOffset(0);
-        mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
-
-        // make sure it worked (returns 0 if so)
-        if (devStatus == 0) {
-            // turn on the DMP, now that it's ready
-            Serial.println(F("Enabling DMP... "));
-            Serial.print(i);
-            mpu.setDMPEnabled(true);
-            mpuIntStatus = mpu.getIntStatus();
-            dmpReady = dmpReady && true;
-            // get expected DMP packet size for later comparison
-            packetSize = mpu.dmpGetFIFOPacketSize();
-        } else {
-            // ERROR!
-            // 1 = initial memory load failed
-            // 2 = DMP configuration updates failed
-            // (if it's going to break, usually the code will be 1)
-            dmpReady = dmpReady && false;
-            Serial.print(i);
-            Serial.print(F("DMP Initialization failed (code "));
-            Serial.print(devStatus);
-            Serial.println(F(")"));
-        }
-        // 关闭mpu
-        digitalWrite(mpuPins[i], HIGH);
-    }
+    
 
     
 }
@@ -173,7 +183,9 @@ void loop() {
         lastSendTime = millis();
 
         // 开启mpu
-        digitalWrite(mpuPins[i], LOW); 
+        digitalWrite(mpuPins[i], LOW);
+        //delay(500);
+       
 
         fifoCount = mpu.getFIFOCount();
 
@@ -216,17 +228,18 @@ void loop() {
         //发送数据，如果是一个数据包的开始，则发送开始标志符
         // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则返回上一次正确的数据
         if(i == 0){
-            Serial.write(START_CODE);
+            // Serial.write(START_CODE);
+            Serial.print(START_CODE);
         }
-        // for(int j = 0; j < 4; j++){
-        Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
-        Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
-        Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
-        Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
-        // }
+        // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+        // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+        // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+        // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+        Serial.print(fifoBuffer[0]);Serial.print(fifoBuffer[1]);
         // 发送数据包的结束编码
         if(i == MPU_NUM - 1){
-            Serial.write(END_CODE);
+            // Serial.write(END_CODE);
+            Serial.println(END_CODE);
         }
 
         // 关闭mpu
