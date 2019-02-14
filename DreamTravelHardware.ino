@@ -228,18 +228,27 @@ void loop() {
         //发送数据，如果是一个数据包的开始，则发送开始标志符
         // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则返回上一次正确的数据
         if(i == 0){
-            // Serial.write(START_CODE);
+            #ifdef PRO
             Serial.print(START_CODE);
+            #else
+            Serial.write(START_CODE);
+            #endif
         }
-        // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
-        // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
-        // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
-        // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+        #ifdef PRO
         Serial.print(fifoBuffer[0]);Serial.print(fifoBuffer[1]);
+        #else
+        Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+        Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+        Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+        Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+        #endif
         // 发送数据包的结束编码
         if(i == MPU_NUM - 1){
-            // Serial.write(END_CODE);
-            Serial.println(END_CODE);
+            #ifdef PRO
+            Serial.print(END_CODE);
+            #else
+            Serial.write(END_CODE);
+            #endif
         }
 
         // 关闭mpu
