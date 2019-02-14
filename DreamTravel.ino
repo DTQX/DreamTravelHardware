@@ -105,7 +105,7 @@ void setup() {
         mpu.initialize();
         Serial.print(mpuPins[i]);
         Serial.print("--")
-        Serial.println(mpu.testConnection() ? F("cs") : F("cf"));
+        Serial.println(mpu.testConnection() ? F("connect success") : F("connect fail"));
         // 关闭mpu
         digitalWrite(mpuPins[i], HIGH); 
     }
@@ -134,7 +134,7 @@ void setup() {
         // make sure it worked (returns 0 if so)
         if (devStatus == 0) {
             // turn on the DMP, now that it's ready
-            Serial.println(F("Enabling DMP..."));
+            Serial.println(F("Enabling DMP... "));
             Serial.print(i);
             mpu.setDMPEnabled(true);
             mpuIntStatus = mpu.getIntStatus();
@@ -155,6 +155,8 @@ void setup() {
         // 关闭mpu
         digitalWrite(mpuPins[i], HIGH);
     }
+
+    
 }
 
 
