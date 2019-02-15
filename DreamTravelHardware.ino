@@ -12,14 +12,18 @@
 #include "Wire.h"
 #include "BonesMap.h"
 
-// 通信相关
+// 开启调试
+//#define DEBUG
+
+// 串口相关
 #define COM_RATE (115200)   // 串口通信速率
-const uint8_t START_CODE=88;   // 数据包开始标志
-const uint8_t END_CODE=44;    // 数据表介绍标志
 
 // 数据发送相关
-const int intervalTime = 30;    // 数据发送间隔时间
-int16_t lastQuat[MPU_NUM][4] = {0};     //储存上一次正确的quat
+#define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
+const uint8_t START_CODE=88;   // 数据包开始标志
+const uint8_t END_CODE=44;    // 数据表介绍标志
+const int intervalTime = 30;    // 数据发送间隔时间，单位ms
+int16_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 
 // class default I2C address is 0x68
@@ -28,11 +32,6 @@ unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // AD0 high = 0x69
 MPU6050 mpu;
 //MPU6050 mpu(0x69); // <-- use for AD0 high
-
-
-#define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
-#define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
-bool blinkState = false;
 
 // MPU control/status vars
 bool dmpReady = true;  // set true if DMP init was successful
@@ -82,91 +81,21 @@ void setup() {
 
     // TODO 加入连接协议
 
-
-    //设置所有的mpu引脚为输出引脚
-    for(int i = 0; i<MPU_NUM; i++){
-        pinMode(mpuPins[i], OUTPUT); 
-    }
-    //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
-    for(int i = 0; i<MPU_NUM; i++){
-        digitalWrite(mpuPins[i], HIGH); 
-    }
+    // 初始化mpu pins
+    initMpuPins();
 
     // initialize serial communication
     Serial.begin(COM_RATE);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // initialize device
-    Serial.println(F("Initializing I2C devices..."));
-    for(int i = 0; i<MPU_NUM; i++){
-        // 开启mpu
-        digitalWrite(mpuPins[i], LOW); 
-         //delay(500);
-        // mpu sample rate  200Hz
-        mpu.initialize();
-        Serial.print(mpuPins[i]);
-        Serial.print("--");
-        Serial.println(mpu.testConnection() ? F("connect success") : F("connect fail"));
-        Serial.println();
-
-        // load and configure the DMP
-        Serial.println(F("Initializing DMP..."));
-        // for(int i = 0; i<MPU_NUM; i++){
-            // 开启mpu
-            // digitalWrite(mpuPins[i], LOW); 
-            //  //delay(500);
-            devStatus = mpu.dmpInitialize();
-            // supply your own gyro offsets here, scaled for min sensitivity
-            mpu.setXGyroOffset(220);
-            mpu.setYGyroOffset(76);
-            mpu.setZGyroOffset(-85);
-            // mpu.setXGyroOffset(0);
-            // mpu.setYGyroOffset(0);
-            // mpu.setZGyroOffset(0);
-            mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
-
-            // make sure it worked (returns 0 if so)
-            if (devStatus == 0) {
-                // turn on the DMP, now that it's ready
-                Serial.println(F("Enabling DMP... "));
-                Serial.print(mpuPins[i]);
-                mpu.setDMPEnabled(true);
-                mpuIntStatus = mpu.getIntStatus();
-                dmpReady = dmpReady && true;
-                // get expected DMP packet size for later comparison
-                packetSize = mpu.dmpGetFIFOPacketSize();
-            } else {
-                // ERROR!
-                // 1 = initial memory load failed
-                // 2 = DMP configuration updates failed
-                // (if it's going to break, usually the code will be 1)
-                dmpReady = dmpReady && false;
-                Serial.print(mpuPins[i]);
-                Serial.print(F("DMP Initialization failed (code "));
-                Serial.print(devStatus);
-                Serial.println(F(")"));
-            }
-
-            Serial.println();
-            // 关闭mpu
-            // digitalWrite(mpuPins[i], HIGH);
-            // //delay(500);
-        // }
-        
-        // 关闭mpu
-        digitalWrite(mpuPins[i], HIGH); 
-        //delay(500);
-    }
+    initDevice();
     
     // 等待开始
     // Serial.println(F("\nSend any character to begin DMP programming: "));
     // while (Serial.available() && Serial.read()); // empty buffer
     // while (!Serial.available());                 // wait for data
     // while (Serial.available() && Serial.read()); // empty buffer again
-
-    
-
-    
 }
 
 
@@ -180,87 +109,190 @@ void loop() {
     if (!dmpReady) return;
 
     for(int i = 0; i<MPU_NUM; i++){
+        //  记录上一次发送时间
         lastSendTime = millis();
 
-        // 开启mpu
-        digitalWrite(mpuPins[i], LOW);
-        //delay(500);
+        // 选中mpu
+        selectMPU(mpuPins[i]);
        
+        // 更新lastPacket
+        updateOneLastPacket(index);
 
-        fifoCount = mpu.getFIFOCount();
+        // 发送一个 mpu 的数据
+        sendOneData(index);
 
-        if(fifoCount < packetSize){
-            // TODO 发送上一次的数据
-
-            digitalWrite(mpuPins[i], HIGH); 
-        }
-
-        mpuIntStatus = mpu.getIntStatus();
-        // check for overflow (this should never happen unless our code is too inefficient)
-        if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
-            // reset so we can continue cleanly
-            mpu.resetFIFO();
-            fifoCount = mpu.getFIFOCount();
-            Serial.println(F("FIFO overflow!"));
-
-        // otherwise, check for DMP data ready interrupt (this should happen frequently)
-        } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
-            // wait for correct available data length, should be a VERY short wait
-            while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-            // 读取最新数据
-            while(fifoCount / packetSize > 0){
-                // read a packet from FIFO
-                mpu.getFIFOBytes(fifoBuffer, packetSize);
-
-                // track FIFO count here in case there is > 1 packet available
-                // (this lets us immediately read more without waiting for an interrupt)
-                fifoCount -= packetSize;
-                
-                // mpu.dmpGetQuaternion(&q, fifoBuffer);
-                // mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
-
-                DEBUG_PRINT(F("get quat i:"));
-                DEBUG_PRINTLN(i);
-            }
-        }
-
-        //发送数据，如果是一个数据包的开始，则发送开始标志符
-        // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则返回上一次正确的数据
-        if(i == 0){
-            #ifdef PRO
-            Serial.print(START_CODE);
-            #else
-            Serial.write(START_CODE);
-            #endif
-        }
-        #ifdef PRO
-        Serial.print(fifoBuffer[0]);Serial.print(fifoBuffer[1]);
-        #else
-        Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
-        Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
-        Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
-        Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
-        #endif
-        // 发送数据包的结束编码
-        if(i == MPU_NUM - 1){
-            #ifdef PRO
-            Serial.print(END_CODE);
-            #else
-            Serial.write(END_CODE);
-            #endif
-        }
-
-        // 关闭mpu
-        digitalWrite(mpuPins[i], HIGH); 
+        // 取消选中mpu
+        unselectMPU(mpuPins[i]);
 
         // 保证发送频率
-        while(lastSendTime - millis() < intervalTime);
-        
+        while( millis() - lastSendTime < intervalTime);
 
     }
 
-        // blink LED to indicate activity
-        // blinkState = !blinkState;
-        // digitalWrite(LED_PIN, blinkState);
+}
+
+// 更新一个 mpu 的lastPacket
+int updateOneLastPacket(int index){
+    fifoCount = mpu.getFIFOCount();
+    // 判断数据是否足够, 不够则直接返回
+    if(fifoCount < packetSize){
+        DEBUG_PRINT("MPU-");
+        DEBUG_PRINT(mpuPins[index]);
+        DEBUG_PRINTLN(": not enough data");
+        return -1;
+    }
+
+    // 获取mpu数据
+    mpuIntStatus = mpu.getIntStatus();
+    // check for overflow (this should never happen unless our code is too inefficient)
+    if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+        // reset so we can continue cleanly
+        mpu.resetFIFO();
+        fifoCount = mpu.getFIFOCount();
+        Serial.println(F("FIFO overflow!"));
+
+    // otherwise, check for DMP data ready interrupt (this should happen frequently)
+    } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
+        // wait for correct available data length, should be a VERY short wait
+        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
+        // 读取最新数据
+        while(fifoCount / packetSize > 0){
+            // read a packet from FIFO
+            mpu.getFIFOBytes(fifoBuffer, packetSize);
+
+            // track FIFO count here in case there is > 1 packet available
+            // (this lets us immediately read more without waiting for an interrupt)
+            fifoCount -= packetSize;
+            
+            // mpu.dmpGetQuaternion(&q, fifoBuffer);
+            // mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
+
+            DEBUG_PRINT(F("get quat i:"));
+            DEBUG_PRINTLN(index);
+        }
+    }
+
+    // mpu数据填充到 lastPacket
+    lastPacket[index][0] = fifoBuffer[0];
+    lastPacket[index][1] = fifoBuffer[1];
+    lastPacket[index][2] = fifoBuffer[4];
+    lastPacket[index][3] = fifoBuffer[5];
+    lastPacket[index][4] = fifoBuffer[8];
+    lastPacket[index][5] = fifoBuffer[9];
+    lastPacket[index][6] = fifoBuffer[12];
+    lastPacket[index][7] = fifoBuffer[13];
+
+    return 1;
+}
+
+// 发送一个 mpu 的数据
+void sendOneData(int index){
+    //发送数据，如果是一个数据包的开始，则发送开始标志符
+    // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
+    if(index == 0){
+        #ifdef DEBUG
+        Serial.print(START_CODE);
+        #else
+        Serial.write(START_CODE);
+        #endif
+    }
+    #ifdef DEBUG
+    Serial.print(fifoBuffer[0]);Serial.print(fifoBuffer[1]);
+    #else
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
+        Serial.write(lastPacket[index][j]);
+    }
+    // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+    // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+    // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+    // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+    #endif
+    // 发送数据包的结束编码
+    if(index == MPU_NUM - 1){
+        #ifdef DEBUG
+        Serial.print(END_CODE);
+        #else
+        Serial.write(END_CODE);
+        #endif
+    }
+}
+
+// 选中mpu
+void selectMPU(int mpuPin){
+    digitalWrite(mpuPin, LOW);
+    //delay(500);
+}
+
+// 取消选中mpu
+void unselectMPU(int mpuPin){
+    digitalWrite(mpuPin, HIGH);
+    //delay(500);
+}
+
+// 初始化mpu pins
+void initMpuPins(){
+    //设置所有的mpu引脚为输出引脚
+    for(int i = 0; i<MPU_NUM; i++){
+        pinMode(mpuPins[i], OUTPUT); 
+    }
+    //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
+    for(int i = 0; i<MPU_NUM; i++){
+        digitalWrite(mpuPins[i], HIGH); 
+    }
+}
+
+// initialize device
+void initDevice(){
+    Serial.println(F("Initializing I2C devices..."));
+    for(int i = 0; i<MPU_NUM; i++){
+        // 选中mpu
+        selectMPU(mpuPins[i]);
+         //delay(500);
+        // mpu sample rate  200Hz
+        mpu.initialize();
+        Serial.print(mpuPins[i]);
+        Serial.print("--");
+        Serial.println(mpu.testConnection() ? F("connect success") : F("connect fail"));
+        Serial.println();
+
+        // load and configure the DMP
+        Serial.println(F("Initializing DMP..."));
+        devStatus = mpu.dmpInitialize();
+        // supply your own gyro offsets here, scaled for min sensitivity
+        mpu.setXGyroOffset(220);
+        mpu.setYGyroOffset(76);
+        mpu.setZGyroOffset(-85);
+        // mpu.setXGyroOffset(0);
+        // mpu.setYGyroOffset(0);
+        // mpu.setZGyroOffset(0);
+        mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+
+        // make sure it worked (returns 0 if so)
+        if (devStatus == 0) {
+            // turn on the DMP, now that it's ready
+            Serial.println(F("Enabling DMP... "));
+            Serial.print(mpuPins[i]);
+            mpu.setDMPEnabled(true);
+            mpuIntStatus = mpu.getIntStatus();
+            dmpReady = dmpReady && true;
+            // get expected DMP packet size for later comparison
+            packetSize = mpu.dmpGetFIFOPacketSize();
+        } else {
+            // ERROR!
+            // 1 = initial memory load failed
+            // 2 = DMP configuration updates failed
+            // (if it's going to break, usually the code will be 1)
+            dmpReady = dmpReady && false;
+            Serial.print(mpuPins[i]);
+            Serial.print(F("DMP Initialization failed (code "));
+            Serial.print(devStatus);
+            Serial.println(F(")"));
+        }
+
+        Serial.println();
+        
+        // 取消选中mpu
+        unselectMPU(mpuPins[i]); 
+    }
 }
