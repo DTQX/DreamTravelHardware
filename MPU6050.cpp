@@ -3525,7 +3525,7 @@ uint8_t MPU6050::dmpGetGyro(int16_t *data, const uint8_t* packet) {
     data[0] = (packet[16] << 8) | packet[17];
     data[1] = (packet[20] << 8) | packet[21];
     data[2] = (packet[24] << 8) | packet[25];
-    return 0;
+    return 0;   
 }
 uint8_t MPU6050::dmpGetGyro(VectorInt16 *v, const uint8_t* packet) {
     // TODO: accommodate different arrangements of sent data (ONLY default supported now)
