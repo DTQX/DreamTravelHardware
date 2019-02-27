@@ -20,9 +20,9 @@
 
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
-const uint8_t START_CODE=88;   // 数据包开始标志
-const uint8_t END_CODE=44;    // 数据表介绍标志
-const int intervalTime = 30;    // 数据发送间隔时间，单位ms
+const uint8_t START_CODE_1=88;   // 数据包开始标志
+const uint8_t START_CODE_2=44;    // 数据表介绍标志
+const int intervalTime = 10;    // 数据发送间隔时间，单位ms
 int16_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 
@@ -116,10 +116,10 @@ void loop() {
         selectMPU(mpuPins[i]);
        
         // 更新lastPacket
-        updateOneLastPacket(index);
+        updateOneLastPacket(i);
 
         // 发送一个 mpu 的数据
-        sendOneData(index);
+        sendOneData(i);
 
         // 取消选中mpu
         unselectMPU(mpuPins[i]);
@@ -192,13 +192,19 @@ void sendOneData(int index){
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
     if(index == 0){
         #ifdef DEBUG
-        Serial.print(START_CODE);
+        Serial.print(START_CODE_1,HEX);
+        Serial.print(START_CODE_2,HEX);
+        Serial.print(" ");
         #else
-        Serial.write(START_CODE);
+        Serial.write(START_CODE_1);
+        Serial.write(START_CODE_2);
         #endif
     }
     #ifdef DEBUG
-    Serial.print(fifoBuffer[0]);Serial.print(fifoBuffer[1]);
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
+        Serial.print(lastPacket[index][j],HEX);
+        Serial.print("  ");
+    }
     #else
     for(int j = 0; j < MPU_DATA_SIZE; j++){
         Serial.write(lastPacket[index][j]);
@@ -208,14 +214,18 @@ void sendOneData(int index){
     // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
     // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
     #endif
-    // 发送数据包的结束编码
+    // 发送数据包的结束编码, 不再发送结束编码
+    #ifdef DEBUG
     if(index == MPU_NUM - 1){
-        #ifdef DEBUG
-        Serial.print(END_CODE);
-        #else
-        Serial.write(END_CODE);
-        #endif
+      Serial.println();
+    //     #ifdef DEBUG
+    //     //Serial.println(START_CODE_2,HEX);
+    //     Serial.print(START_CODE_2,HEX);
+    //     #else
+    //     Serial.write(START_CODE_2);
+    //     #endif
     }
+    #endif
 }
 
 // 选中mpu
