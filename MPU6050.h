@@ -500,7 +500,28 @@ THE SOFTWARE.
 #define MPU6050_DMP_MEMORY_BANK_SIZE    256
 #define MPU6050_DMP_MEMORY_CHUNK_SIZE   16
 
+#define INV_X_GYRO      (0x40)
+#define INV_Y_GYRO      (0x20)
+#define INV_Z_GYRO      (0x10)
+#define INV_XYZ_GYRO    (INV_X_GYRO | INV_Y_GYRO | INV_Z_GYRO)
+#define INV_XYZ_ACCEL   (0x08)
+
+#define BIT_SLEEP           (0x40)
+
+#define BIT_STBY_XG         (0x04)
+#define BIT_STBY_YG         (0x02)
+#define BIT_STBY_ZG         (0x01)
+#define BIT_STBY_XYZA       (BIT_STBY_XA | BIT_STBY_YA | BIT_STBY_ZA)
+
+
+
 // note: DMP code memory blocks defined at end of header file
+
+enum clock_sel_e {
+    INV_CLK_INTERNAL = 0,
+    INV_CLK_PLL,
+    NUM_CLK
+};
 
 class MPU6050 {
     public:
@@ -508,6 +529,10 @@ class MPU6050 {
 
         void initialize();
         bool testConnection();
+
+
+        void wakeUp();
+        int setSensor(unsigned char sensors);
 
         // AUX_VDDIO register
         uint8_t getAuxVDDIOLevel();

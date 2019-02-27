@@ -53,9 +53,34 @@ MPU6050::MPU6050(uint8_t address):devAddr(address) {
  * the default internal clock source.
  */
 void MPU6050::initialize() {
-    setClockSource(MPU6050_CLOCK_PLL_XGYRO);
-    setFullScaleGyroRange(MPU6050_GYRO_FS_250);
-    setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
+    reset();
+    wakeUp();
+    setFullScaleGyroRange(MPU6050_GYRO_FS_250);     // 250度
+    setFullScaleAccelRange(MPU6050_ACCEL_FS_2);     //  2G
+
+    DEBUG_PRINTLN(F("Setting DLPF bandwidth to 42Hz..."));
+    setDLPFMode(MPU6050_DLPF_BW_42);
+
+    DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
+    setRate(9); // 1khz / (1 + 9) = 100 Hz
+
+    DEBUG_PRINTLN(F("Disabling I2C Master mode..."));
+    setI2CMasterModeEnabled(false);
+
+    // 关闭所有传感器
+    setSensor(0);
+    // 开启所有传感器
+    setSensor(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+
+    DEBUG_PRINTLN(F("Setting clock source to Z Gyro..."));
+    setClockSource(MPU6050_CLOCK_PLL_ZGYRO);
+
+    DEBUG_PRINTLN(F("Setting DMP and FIFO_OFLOW interrupts enabled..."));
+    setIntEnabled(1<<MPU6050_INTERRUPT_FIFO_OFLOW_BIT|1<<MPU6050_INTERRUPT_DMP_INT_BIT);
+
+    DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
+    setRate(9); // 1khz / (1 + 9) = 100 Hz
+
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
 }
 
@@ -65,6 +90,43 @@ void MPU6050::initialize() {
  */
 bool MPU6050::testConnection() {
     return getDeviceID() == 0x34;
+}
+
+int MPU6050::setSensor(unsigned char sensors){
+    I2Cdev::writeBit(devAddr, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, true);
+    
+    unsigned char data;
+
+
+    if (sensors & INV_XYZ_GYRO)
+        data = INV_CLK_PLL;
+    else if (sensors)
+        data = 0;
+    else
+        data = BIT_SLEEP;
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_1, 1, &data)) {
+        return -1;
+    }
+
+    data = 0;
+    if (!(sensors & INV_X_GYRO))
+        data |= BIT_STBY_XG;
+    if (!(sensors & INV_Y_GYRO))
+        data |= BIT_STBY_YG;
+    if (!(sensors & INV_Z_GYRO))
+        data |= BIT_STBY_ZG;
+    if (!(sensors & INV_XYZ_ACCEL))
+        data |= BIT_STBY_XYZA;
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_2, 1, &data)) {
+        return -1;
+    }
+
+    if (sensors && (sensors != INV_XYZ_ACCEL)){
+        /* Latched interrupts only used in LP accel mode. */
+        // TODO
+    }
+    delay(50);
+    return 0;
 }
 
 // AUX_VDDIO register (InvenSense demo code calls this RA_*G_OFFS_TC)
@@ -2416,7 +2478,16 @@ void MPU6050::resetSensors() {
  */
 void MPU6050::reset() {
     I2Cdev::writeBit(devAddr, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, true);
+    delay(100);
 }
+
+/**
+ * 唤醒设备
+ */
+void MPU6050::wakeUp(){
+    I2Cdev::writeBit(devAddr, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, false);
+}
+
 /** Get sleep mode status.
  * Setting the SLEEP bit in the register puts the device into very low power
  * sleep mode. In this mode, only the serial interface and internal registers
@@ -3205,20 +3276,6 @@ void MPU6050::setDMPConfig2(uint8_t config) {
 }
 
 uint8_t MPU6050::dmpInitialize() {
-    // reset device
-    DEBUG_PRINTLN(F("\n\nResetting MPU6050..."));
-    reset();
-    delay(30); // wait after reset
-
-    // enable sleep mode and wake cycle
-    /*Serial.println(F("Enabling sleep mode..."));
-    setSleepEnabled(true);
-    Serial.println(F("Enabling wake cycle..."));
-    setWakeCycleEnabled(true);*/
-
-    // disable sleep mode
-    DEBUG_PRINTLN(F("Disabling sleep mode..."));
-    setSleepEnabled(false);
 
     // get MPU hardware revision
     DEBUG_PRINTLN(F("Selecting user bank 16..."));
@@ -3251,8 +3308,7 @@ uint8_t MPU6050::dmpInitialize() {
     // setup weird slave stuff (?)
     DEBUG_PRINTLN(F("Setting slave 0 address to 0x7F..."));
     setSlaveAddress(0, 0x7F);
-    DEBUG_PRINTLN(F("Disabling I2C Master mode..."));
-    setI2CMasterModeEnabled(false);
+    
     DEBUG_PRINTLN(F("Setting slave 0 address to 0x68 (self)..."));
     setSlaveAddress(0, 0x68);
     DEBUG_PRINTLN(F("Resetting I2C Master control..."));
@@ -3273,20 +3329,13 @@ uint8_t MPU6050::dmpInitialize() {
         if (writeProgDMPConfigurationSet(dmpConfig, MPU6050_DMP_CONFIG_SIZE)) {
             DEBUG_PRINTLN(F("Success! DMP configuration written and verified."));
 
-            DEBUG_PRINTLN(F("Setting clock source to Z Gyro..."));
-            setClockSource(MPU6050_CLOCK_PLL_ZGYRO);
 
-            DEBUG_PRINTLN(F("Setting DMP and FIFO_OFLOW interrupts enabled..."));
-            setIntEnabled(1<<MPU6050_INTERRUPT_FIFO_OFLOW_BIT|1<<MPU6050_INTERRUPT_DMP_INT_BIT);
-
-            DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
-            setRate(9); // 1khz / (1 + 4) = 200 Hz
+           
 
             DEBUG_PRINTLN(F("Setting external frame sync to TEMP_OUT_L[0]..."));
             setExternalFrameSync(MPU6050_EXT_SYNC_TEMP_OUT_L);
 
-            DEBUG_PRINTLN(F("Setting DLPF bandwidth to 42Hz..."));
-            setDLPFMode(MPU6050_DLPF_BW_42);
+            
 
             DEBUG_PRINTLN(F("Setting gyro sensitivity to +/- 2000 deg/sec..."));
             setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
