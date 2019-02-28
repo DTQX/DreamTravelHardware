@@ -3277,12 +3277,82 @@ void MPU6050::setDMPConfig2(uint8_t config) {
 
 uint8_t MPU6050::dmpInitialize() {
     // 加载dmp程序
-    mpu_load_firmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100)
+    mpuLoadFirmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100);
 
-    unsigned short dmpFeatures = DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
-        DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-        DMP_FEATURE_GYRO_CAL;
+    unsigned short dmpFeatures = DMP_FEATURE_6X_LP_QUAT  
+     | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO ;
+
+    dmpEnableFeature(dmpFeatures);
+
+    dmp_set_fifo_rate(100);
+    
     return 0; // success
+}
+
+/**
+ *  @brief      Enable/disable DMP support.
+ *  @param[in]  enable  1 to turn on the DMP.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpu_set_dmp_state(unsigned char enable)
+{
+    unsigned char tmp;
+    if (st.chip_cfg.dmp_on == enable)
+        return 0;
+
+    if (enable) {
+        if (!st.chip_cfg.dmp_loaded)
+            return -1;
+        /* Disable data ready interrupt. */
+        set_int_enable(0);
+        /* Disable bypass mode. */
+        mpu_set_bypass(0);
+        /* Keep constant sample rate, FIFO rate controlled by DMP. */
+        mpu_set_sample_rate(st.chip_cfg.dmp_sample_rate);
+        /* Remove FIFO elements. */
+        tmp = 0;
+        i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        st.chip_cfg.dmp_on = 1;
+        /* Enable DMP interrupt. */
+        set_int_enable(1);
+        mpu_reset_fifo();
+    } else {
+        /* Disable DMP interrupt. */
+        set_int_enable(0);
+        /* Restore FIFO settings. */
+        tmp = st.chip_cfg.fifo_enable;
+        i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        st.chip_cfg.dmp_on = 0;
+        mpu_reset_fifo();
+    }
+    return 0;
+}
+
+
+/**
+ *  @brief      Set DMP output rate.
+ *  Only used when DMP is on.
+ *  @param[in]  rate    Desired fifo rate (Hz).
+ *  @return     0 if successful.
+ */
+int MPU6050::dmp_set_fifo_rate(unsigned short rate)
+{
+    const unsigned char regs_end[12] = {DINAFE, DINAF2, DINAAB,
+        0xc4, DINAAA, DINAF1, DINADF, DINADF, 0xBB, 0xAF, DINADF, DINADF};
+    unsigned short div;
+    unsigned char tmp[8];
+
+    if (rate > DMP_SAMPLE_RATE)
+        return -1;
+    div = DMP_SAMPLE_RATE / rate - 1;
+    tmp[0] = (unsigned char)((div >> 8) & 0xFF);
+    tmp[1] = (unsigned char)(div & 0xFF);
+    if (mpu_write_mem(D_0_22, 2, tmp))
+        return -1;
+    if (mpu_write_mem(CFG_6, 12, (unsigned char*)regs_end))
+        return -1;
+
+    return 0;
 }
 
 /**
@@ -3302,7 +3372,7 @@ uint8_t MPU6050::dmpInitialize() {
  *  @param[in]  mask    Mask of features to enable.
  *  @return     0 if successful.
  */
-int MPU6050::dmp_enable_feature(unsigned short mask)
+int MPU6050::dmpEnableFeature(unsigned short mask)
 {
     unsigned char tmp[10];
 
@@ -3327,25 +3397,13 @@ int MPU6050::dmp_enable_feature(unsigned short mask)
         tmp[2] = 0xA3;
         tmp[3] = 0xA3;
     }
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
-        tmp[4] = 0xC4;
-        tmp[5] = 0xCC;
-        tmp[6] = 0xC6;
-    } else {
-        tmp[4] = 0xA3;
-        tmp[5] = 0xA3;
-        tmp[6] = 0xA3;
-    }
     tmp[7] = 0xA3;
     tmp[8] = 0xA3;
     tmp[9] = 0xA3;
     mpu_write_mem(CFG_15,10,tmp);
 
-    /* Send gesture data to the FIFO. */
-    if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-        tmp[0] = DINA20;
-    else
-        tmp[0] = 0xD8;
+    /* do not send gesture data to the FIFO. */
+    tmp[0] = 0xD8;
     mpu_write_mem(CFG_27,1,tmp);
 
     if (mask & DMP_FEATURE_GYRO_CAL)
@@ -3353,39 +3411,11 @@ int MPU6050::dmp_enable_feature(unsigned short mask)
     else
         dmp_enable_gyro_cal(0);
 
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
-        if (mask & DMP_FEATURE_SEND_CAL_GYRO) {
-            tmp[0] = 0xB2;
-            tmp[1] = 0x8B;
-            tmp[2] = 0xB6;
-            tmp[3] = 0x9B;
-        } else {
-            tmp[0] = DINAC0;
-            tmp[1] = DINA80;
-            tmp[2] = DINAC2;
-            tmp[3] = DINA90;
-        }
-        mpu_write_mem(CFG_GYRO_RAW_DATA, 4, tmp);
-    }
-
-    if (mask & DMP_FEATURE_TAP) {
-        /* Enable tap. */
-        tmp[0] = 0xF8;
-        mpu_write_mem(CFG_20, 1, tmp);
-        dmp_set_tap_thresh(TAP_XYZ, 250);
-        dmp_set_tap_axes(TAP_XYZ);
-        dmp_set_tap_count(1);
-        dmp_set_tap_time(100);
-        dmp_set_tap_time_multi(500);
-
-        dmp_set_shake_reject_thresh(GYRO_SF, 200);
-        dmp_set_shake_reject_time(40);
-        dmp_set_shake_reject_timeout(10);
-    } else {
-        tmp[0] = 0xD8;
-        mpu_write_mem(CFG_20, 1, tmp);
-    }
-
+    // close tap
+    tmp[0] = 0xD8;
+    mpu_write_mem(CFG_20, 1, tmp);
+    
+    // 不开启DMP_FEATURE_ANDROID_ORIENT
     if (mask & DMP_FEATURE_ANDROID_ORIENT) {
         tmp[0] = 0xD9;
     } else
@@ -3403,20 +3433,90 @@ int MPU6050::dmp_enable_feature(unsigned short mask)
         dmp_enable_6x_lp_quat(0);
 
     /* Pedometer is always enabled. */
-    dmp.feature_mask = mask | DMP_FEATURE_PEDOMETER;
-    mpu_reset_fifo();
+    resetFIFO();
 
-    dmp.packet_length = 0;
+    packet_length = 0;
     if (mask & DMP_FEATURE_SEND_RAW_ACCEL)
-        dmp.packet_length += 6;
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO)
-        dmp.packet_length += 6;
+        packet_length += 6;
+    // if (mask & DMP_FEATURE_SEND_ANY_GYRO)
+    //     dmp.packet_length += 6;
     if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
-        dmp.packet_length += 16;
-    if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-        dmp.packet_length += 4;
+        packet_length += 16;
+    // if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
+    //     dmp.packet_length += 4;
 
     return 0;
+}
+
+/**
+ *  @brief      Generate 3-axis quaternions from the DMP.
+ *  In this driver, the 3-axis and 6-axis DMP quaternion features are mutually
+ *  exclusive.
+ *  @param[in]  enable  1 to enable 3-axis quaternion.
+ *  @return     0 if successful.
+ */
+int MPU6050::dmp_enable_lp_quat(unsigned char enable)
+{
+    unsigned char regs[4];
+    if (enable) {
+        regs[0] = DINBC0;
+        regs[1] = DINBC2;
+        regs[2] = DINBC4;
+        regs[3] = DINBC6;
+    }
+    else
+        memset(regs, 0x8B, 4);
+
+    mpu_write_mem(CFG_LP_QUAT, 4, regs);
+
+    resetFIFO();
+
+    return 0;
+}
+
+/**
+ *  @brief       Generate 6-axis quaternions from the DMP.
+ *  In this driver, the 3-axis and 6-axis DMP quaternion features are mutually
+ *  exclusive.
+ *  @param[in]   enable  1 to enable 6-axis quaternion.
+ *  @return      0 if successful.
+ */
+int MPU6050::dmp_enable_6x_lp_quat(unsigned char enable)
+{
+    unsigned char regs[4];
+    if (enable) {
+        regs[0] = DINA20;
+        regs[1] = DINA28;
+        regs[2] = DINA30;
+        regs[3] = DINA38;
+    } else
+        memset(regs, 0xA3, 4);
+
+    mpu_write_mem(CFG_8, 4, regs);
+
+    resetFIFO();
+
+    return 0;
+}
+
+/**
+ *  @brief      Calibrate the gyro data in the DMP.
+ *  After eight seconds of no motion, the DMP will compute gyro biases and
+ *  subtract them from the quaternion output. If @e dmp_enable_feature is
+ *  called with @e DMP_FEATURE_SEND_CAL_GYRO, the biases will also be
+ *  subtracted from the gyro output.
+ *  @param[in]  enable  1 to enable gyro calibration.
+ *  @return     0 if successful.
+ */
+int MPU6050::dmp_enable_gyro_cal(unsigned char enable)
+{
+    if (enable) {
+        unsigned char regs[9] = {0xb8, 0xaa, 0xb3, 0x8d, 0xb4, 0x98, 0x0d, 0x35, 0x5d};
+        return mpu_write_mem(CFG_MOTION_BIAS, 9, regs);
+    } else {
+        unsigned char regs[9] = {0xb8, 0xaa, 0xaa, 0xaa, 0xb0, 0x88, 0xc3, 0xc5, 0xc7};
+        return mpu_write_mem(CFG_MOTION_BIAS, 9, regs);
+    }
 }
 
 /**
@@ -3445,7 +3545,7 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
         return -1;
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpuWriteMem(ii, this_write, (unsigned char*)&firmware[ii]))
+        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
             return -1;
         if (mpu_read_mem(ii, this_write, cur))
             return -1;
@@ -3474,7 +3574,7 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
  *  @param[in]  data        Bytes to write to memory.
  *  @return     0 if successful.
  */
-int MPU6050::mpuWriteMem(unsigned short mem_addr, unsigned short length,
+int MPU6050::mpu_write_mem(unsigned short mem_addr, unsigned short length,
         unsigned char *data)
 {
     unsigned char tmp[2];
@@ -3505,7 +3605,7 @@ int MPU6050::mpuWriteMem(unsigned short mem_addr, unsigned short length,
  *  @param[out] data        Bytes read from memory.
  *  @return     0 if successful.
  */
-int MPU6050::mpuReadMem(unsigned short mem_addr, unsigned short length,
+int MPU6050::mpu_read_mem(unsigned short mem_addr, unsigned short length,
         unsigned char *data)
 {
     unsigned char tmp[2];

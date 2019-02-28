@@ -526,6 +526,69 @@ THE SOFTWARE.
 #define DMP_FEATURE_SEND_RAW_GYRO   (0x080)
 #define DMP_FEATURE_SEND_CAL_GYRO   (0x100)
 
+#define DMP_SAMPLE_RATE     (200)
+#define GYRO_SF             (46850825LL * 200 / DMP_SAMPLE_RATE)
+
+#define D_0_104                 (104)
+#define CFG_15                  (2727)
+#define CFG_27                  (2742)
+#define CFG_MOTION_BIAS         (1208)
+#define CFG_20                  (2224)
+#define CFG_ANDROID_ORIENT_INT  (1853)
+
+#define DINBC0 0xc0
+#define DINBC2 0xc2
+#define DINBC4 0xc4
+#define DINBC6 0xc6
+
+#define CFG_LP_QUAT             (2712)
+
+#define DINA20 0x20
+#define DINA28 0x28
+#define DINA30 0x30
+#define DINA38 0x38
+
+#define CFG_8                   (2718)
+
+#define DINA80 0x80
+#define DINA90 0x90
+#define DINAA0 0xa0
+#define DINAC9 0xc9
+#define DINACB 0xcb
+#define DINACD 0xcd
+#define DINACF 0xcf
+#define DINAC8 0xc8
+#define DINACA 0xca
+#define DINACC 0xcc
+#define DINACE 0xce
+#define DINAD8 0xd8
+#define DINADD 0xdd
+#define DINAF8 0xf0
+#define DINAFE 0xfe
+#define DINAF2 0xf2
+
+#define DINADC 0xdc
+#define DINAF2 0xf2
+#define DINAAB 0xab
+#define DINAAA 0xaa
+#define DINAF1 0xf1
+#define DINADF 0xdf
+#define DINADA 0xda
+#define DINAB1 0xb1
+#define DINAB9 0xb9
+#define DINAF3 0xf3
+#define DINA8B 0x8b
+#define DINAA3 0xa3
+#define DINA91 0x91
+#define DINAB6 0xb6
+#define DINAB4 0xb4
+
+#define D_0_22                  (22+512)
+#define D_0_24                  (24+512)
+
+#define CFG_6                   (2753)
+
+
 // note: DMP code memory blocks defined at end of header file
 
 enum clock_sel_e {
@@ -533,6 +596,8 @@ enum clock_sel_e {
     INV_CLK_PLL,
     NUM_CLK
 };
+
+int packet_length = 0;
 
 class MPU6050 {
     public:
@@ -547,10 +612,23 @@ class MPU6050 {
 
         int mpuLoadFirmware(unsigned short length, const unsigned char *firmware,
             unsigned short start_addr, unsigned short sample_rate);
-        int mpuWriteMem(unsigned short mem_addr, unsigned short length,
+        int mpu_write_mem(unsigned short mem_addr, unsigned short length,
             unsigned char *data);
-        int mpuReadMem(unsigned short mem_addr, unsigned short length,
+        int mpu_read_mem(unsigned short mem_addr, unsigned short length,
         unsigned char *data);
+
+        int dmp_enable_gyro_cal(unsigned char enable);
+
+        int dmpEnableFeature(unsigned short mask);
+
+        int dmp_enable_lp_quat(unsigned char enable);
+
+        int dmp_enable_6x_lp_quat(unsigned char enable);
+
+        int dmp_set_fifo_rate(unsigned short rate);
+
+        int mpu_set_dmp_state(unsigned char enable)
+
 
         // AUX_VDDIO register
         uint8_t getAuxVDDIOLevel();
