@@ -3276,204 +3276,255 @@ void MPU6050::setDMPConfig2(uint8_t config) {
 }
 
 uint8_t MPU6050::dmpInitialize() {
+    // 加载dmp程序
+    mpu_load_firmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100)
 
-    // get MPU hardware revision
-    DEBUG_PRINTLN(F("Selecting user bank 16..."));
-    setMemoryBank(0x10, true, true);
-    DEBUG_PRINTLN(F("Selecting memory byte 6..."));
-    setMemoryStartAddress(0x06);
-    DEBUG_PRINTLN(F("Checking hardware revision..."));
-    DEBUG_PRINT(F("Revision @ user[16][6] = "));
-    DEBUG_PRINTLNF(readMemoryByte(), HEX);
-    DEBUG_PRINTLN(F("Resetting memory bank selection to 0..."));
-    setMemoryBank(0, false, false);
-
-    // check OTP bank valid
-    DEBUG_PRINTLN(F("Reading OTP bank valid flag..."));
-    DEBUG_PRINT(F("OTP bank is "));
-    DEBUG_PRINTLN(getOTPBankValid() ? F("valid!") : F("invalid!"));
-
-    // get X/Y/Z gyro offsets
-    DEBUG_PRINTLN(F("Reading gyro offset TC values..."));
-    int8_t xgOffsetTC = getXGyroOffsetTC();
-    int8_t ygOffsetTC = getYGyroOffsetTC();
-    int8_t zgOffsetTC = getZGyroOffsetTC();
-    DEBUG_PRINT(F("X gyro offset = "));
-    DEBUG_PRINTLN(xgOffsetTC);
-    DEBUG_PRINT(F("Y gyro offset = "));
-    DEBUG_PRINTLN(ygOffsetTC);
-    DEBUG_PRINT(F("Z gyro offset = "));
-    DEBUG_PRINTLN(zgOffsetTC);
-
-    // setup weird slave stuff (?)
-    DEBUG_PRINTLN(F("Setting slave 0 address to 0x7F..."));
-    setSlaveAddress(0, 0x7F);
-    
-    DEBUG_PRINTLN(F("Setting slave 0 address to 0x68 (self)..."));
-    setSlaveAddress(0, 0x68);
-    DEBUG_PRINTLN(F("Resetting I2C Master control..."));
-    resetI2CMaster();
-    delay(20);
-
-    // load DMP code into memory banks
-    DEBUG_PRINT(F("Writing DMP code to MPU memory banks ("));
-    DEBUG_PRINT(MPU6050_DMP_CODE_SIZE);
-    DEBUG_PRINTLN(F(" bytes)"));
-    if (writeProgMemoryBlock(dmpMemory, MPU6050_DMP_CODE_SIZE)) {
-        DEBUG_PRINTLN(F("Success! DMP code written and verified."));
-
-        // write DMP configuration
-        DEBUG_PRINT(F("Writing DMP configuration to MPU memory banks ("));
-        DEBUG_PRINT(MPU6050_DMP_CONFIG_SIZE);
-        DEBUG_PRINTLN(F(" bytes in config def)"));
-        if (writeProgDMPConfigurationSet(dmpConfig, MPU6050_DMP_CONFIG_SIZE)) {
-            DEBUG_PRINTLN(F("Success! DMP configuration written and verified."));
-
-
-           
-
-            DEBUG_PRINTLN(F("Setting external frame sync to TEMP_OUT_L[0]..."));
-            setExternalFrameSync(MPU6050_EXT_SYNC_TEMP_OUT_L);
-
-            
-
-            DEBUG_PRINTLN(F("Setting gyro sensitivity to +/- 2000 deg/sec..."));
-            setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
-
-            DEBUG_PRINTLN(F("Setting DMP programm start address"));
-            //write start address MSB into register
-            setDMPConfig1(0x03);
-            //write start address LSB into register
-            setDMPConfig2(0x00);
-
-            DEBUG_PRINTLN(F("Clearing OTP Bank flag..."));
-            setOTPBankValid(false);
-
-            DEBUG_PRINTLN(F("Setting X/Y/Z gyro offset TCs to previous values..."));
-            setXGyroOffsetTC(xgOffsetTC);
-            setYGyroOffsetTC(ygOffsetTC);
-            setZGyroOffsetTC(zgOffsetTC);
-
-            //DEBUG_PRINTLN(F("Setting X/Y/Z gyro user offsets to zero..."));
-            //setXGyroOffset(0);
-            //setYGyroOffset(0);
-            //setZGyroOffset(0);
-
-            DEBUG_PRINTLN(F("Writing final memory update 1/7 (function unknown)..."));
-            uint8_t dmpUpdate[16], j;
-            uint16_t pos = 0;
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Writing final memory update 2/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Resetting FIFO..."));
-            resetFIFO();
-
-            DEBUG_PRINTLN(F("Reading FIFO count..."));
-            uint16_t fifoCount = getFIFOCount();
-            uint8_t fifoBuffer[128];
-
-            DEBUG_PRINT(F("Current FIFO count="));
-            DEBUG_PRINTLN(fifoCount);
-            getFIFOBytes(fifoBuffer, fifoCount);
-
-            DEBUG_PRINTLN(F("Setting motion detection threshold to 2..."));
-            setMotionDetectionThreshold(2);
-
-            DEBUG_PRINTLN(F("Setting zero-motion detection threshold to 156..."));
-            setZeroMotionDetectionThreshold(156);
-
-            DEBUG_PRINTLN(F("Setting motion detection duration to 80..."));
-            setMotionDetectionDuration(80);
-
-            DEBUG_PRINTLN(F("Setting zero-motion detection duration to 0..."));
-            setZeroMotionDetectionDuration(0);
-
-            DEBUG_PRINTLN(F("Resetting FIFO..."));
-            resetFIFO();
-
-            DEBUG_PRINTLN(F("Enabling FIFO..."));
-            setFIFOEnabled(true);
-
-            DEBUG_PRINTLN(F("Enabling DMP..."));
-            setDMPEnabled(true);
-
-            DEBUG_PRINTLN(F("Resetting DMP..."));
-            resetDMP();
-
-            DEBUG_PRINTLN(F("Writing final memory update 3/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Writing final memory update 4/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Writing final memory update 5/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Waiting for FIFO count > 2..."));
-            while ((fifoCount = getFIFOCount()) < 3);
-
-            DEBUG_PRINT(F("Current FIFO count="));
-            DEBUG_PRINTLN(fifoCount);
-            DEBUG_PRINTLN(F("Reading FIFO data..."));
-            getFIFOBytes(fifoBuffer, fifoCount);
-
-            DEBUG_PRINTLN(F("Reading interrupt status..."));
-
-            DEBUG_PRINT(F("Current interrupt status="));
-            DEBUG_PRINTLNF(getIntStatus(), HEX);
-
-            DEBUG_PRINTLN(F("Reading final memory update 6/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            readMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("Waiting for FIFO count > 2..."));
-            while ((fifoCount = getFIFOCount()) < 3);
-
-            DEBUG_PRINT(F("Current FIFO count="));
-            DEBUG_PRINTLN(fifoCount);
-
-            DEBUG_PRINTLN(F("Reading FIFO data..."));
-            getFIFOBytes(fifoBuffer, fifoCount);
-
-            DEBUG_PRINTLN(F("Reading interrupt status..."));
-
-            DEBUG_PRINT(F("Current interrupt status="));
-            DEBUG_PRINTLNF(getIntStatus(), HEX);
-
-            DEBUG_PRINTLN(F("Writing final memory update 7/7 (function unknown)..."));
-            for (j = 0; j < 4 || j < dmpUpdate[2] + 3; j++, pos++) dmpUpdate[j] = pgm_read_byte(&dmpUpdates[pos]);
-            writeMemoryBlock(dmpUpdate + 3, dmpUpdate[2], dmpUpdate[0], dmpUpdate[1]);
-
-            DEBUG_PRINTLN(F("DMP is good to go! Finally."));
-
-            DEBUG_PRINTLN(F("Disabling DMP (you turn it on later)..."));
-            setDMPEnabled(false);
-
-            DEBUG_PRINTLN(F("Setting up internal 42-byte (default) DMP packet buffer..."));
-            dmpPacketSize = 42;
-            /*if ((dmpPacketBuffer = (uint8_t *)malloc(42)) == 0) {
-                return 3; // TODO: proper error code for no memory
-            }*/
-
-            DEBUG_PRINTLN(F("Resetting FIFO and clearing INT status one last time..."));
-            resetFIFO();
-            getIntStatus();
-        } else {
-            DEBUG_PRINTLN(F("ERROR! DMP configuration verification failed."));
-            return 2; // configuration block loading failed
-        }
-    } else {
-        DEBUG_PRINTLN(F("ERROR! DMP code verification failed."));
-        return 1; // main binary block loading failed
-    }
+    unsigned short dmpFeatures = DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+        DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
+        DMP_FEATURE_GYRO_CAL;
     return 0; // success
+}
+
+/**
+ *  @brief      Enable DMP features.
+ *  The following \#define's are used in the input mask:
+ *  \n DMP_FEATURE_TAP
+ *  \n DMP_FEATURE_ANDROID_ORIENT
+ *  \n DMP_FEATURE_LP_QUAT
+ *  \n DMP_FEATURE_6X_LP_QUAT
+ *  \n DMP_FEATURE_GYRO_CAL
+ *  \n DMP_FEATURE_SEND_RAW_ACCEL
+ *  \n DMP_FEATURE_SEND_RAW_GYRO
+ *  \n NOTE: DMP_FEATURE_LP_QUAT and DMP_FEATURE_6X_LP_QUAT are mutually
+ *  exclusive.
+ *  \n NOTE: DMP_FEATURE_SEND_RAW_GYRO and DMP_FEATURE_SEND_CAL_GYRO are also
+ *  mutually exclusive.
+ *  @param[in]  mask    Mask of features to enable.
+ *  @return     0 if successful.
+ */
+int MPU6050::dmp_enable_feature(unsigned short mask)
+{
+    unsigned char tmp[10];
+
+    /* TODO: All of these settings can probably be integrated into the default
+     * DMP image.
+     */
+    /* Set integration scale factor. */
+    tmp[0] = (unsigned char)((GYRO_SF >> 24) & 0xFF);
+    tmp[1] = (unsigned char)((GYRO_SF >> 16) & 0xFF);
+    tmp[2] = (unsigned char)((GYRO_SF >> 8) & 0xFF);
+    tmp[3] = (unsigned char)(GYRO_SF & 0xFF);
+    mpu_write_mem(D_0_104, 4, tmp);
+
+    /* Send sensor data to the FIFO. */
+    tmp[0] = 0xA3;
+    if (mask & DMP_FEATURE_SEND_RAW_ACCEL) {
+        tmp[1] = 0xC0;
+        tmp[2] = 0xC8;
+        tmp[3] = 0xC2;
+    } else {
+        tmp[1] = 0xA3;
+        tmp[2] = 0xA3;
+        tmp[3] = 0xA3;
+    }
+    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
+        tmp[4] = 0xC4;
+        tmp[5] = 0xCC;
+        tmp[6] = 0xC6;
+    } else {
+        tmp[4] = 0xA3;
+        tmp[5] = 0xA3;
+        tmp[6] = 0xA3;
+    }
+    tmp[7] = 0xA3;
+    tmp[8] = 0xA3;
+    tmp[9] = 0xA3;
+    mpu_write_mem(CFG_15,10,tmp);
+
+    /* Send gesture data to the FIFO. */
+    if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
+        tmp[0] = DINA20;
+    else
+        tmp[0] = 0xD8;
+    mpu_write_mem(CFG_27,1,tmp);
+
+    if (mask & DMP_FEATURE_GYRO_CAL)
+        dmp_enable_gyro_cal(1);
+    else
+        dmp_enable_gyro_cal(0);
+
+    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
+        if (mask & DMP_FEATURE_SEND_CAL_GYRO) {
+            tmp[0] = 0xB2;
+            tmp[1] = 0x8B;
+            tmp[2] = 0xB6;
+            tmp[3] = 0x9B;
+        } else {
+            tmp[0] = DINAC0;
+            tmp[1] = DINA80;
+            tmp[2] = DINAC2;
+            tmp[3] = DINA90;
+        }
+        mpu_write_mem(CFG_GYRO_RAW_DATA, 4, tmp);
+    }
+
+    if (mask & DMP_FEATURE_TAP) {
+        /* Enable tap. */
+        tmp[0] = 0xF8;
+        mpu_write_mem(CFG_20, 1, tmp);
+        dmp_set_tap_thresh(TAP_XYZ, 250);
+        dmp_set_tap_axes(TAP_XYZ);
+        dmp_set_tap_count(1);
+        dmp_set_tap_time(100);
+        dmp_set_tap_time_multi(500);
+
+        dmp_set_shake_reject_thresh(GYRO_SF, 200);
+        dmp_set_shake_reject_time(40);
+        dmp_set_shake_reject_timeout(10);
+    } else {
+        tmp[0] = 0xD8;
+        mpu_write_mem(CFG_20, 1, tmp);
+    }
+
+    if (mask & DMP_FEATURE_ANDROID_ORIENT) {
+        tmp[0] = 0xD9;
+    } else
+        tmp[0] = 0xD8;
+    mpu_write_mem(CFG_ANDROID_ORIENT_INT, 1, tmp);
+
+    if (mask & DMP_FEATURE_LP_QUAT)
+        dmp_enable_lp_quat(1);
+    else
+        dmp_enable_lp_quat(0);
+
+    if (mask & DMP_FEATURE_6X_LP_QUAT)
+        dmp_enable_6x_lp_quat(1);
+    else
+        dmp_enable_6x_lp_quat(0);
+
+    /* Pedometer is always enabled. */
+    dmp.feature_mask = mask | DMP_FEATURE_PEDOMETER;
+    mpu_reset_fifo();
+
+    dmp.packet_length = 0;
+    if (mask & DMP_FEATURE_SEND_RAW_ACCEL)
+        dmp.packet_length += 6;
+    if (mask & DMP_FEATURE_SEND_ANY_GYRO)
+        dmp.packet_length += 6;
+    if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
+        dmp.packet_length += 16;
+    if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
+        dmp.packet_length += 4;
+
+    return 0;
+}
+
+/**
+ *  @brief      Load and verify DMP image.
+ *  @param[in]  length      Length of DMP image.
+ *  @param[in]  firmware    DMP code.
+ *  @param[in]  start_addr  Starting address of DMP code memory.
+ *  @param[in]  sample_rate Fixed sampling rate used when DMP is enabled.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmware,
+    unsigned short start_addr, unsigned short sample_rate)
+{
+    unsigned short ii;
+    unsigned short this_write;
+    /* Must divide evenly into st.hw->bank_size to avoid bank crossings. */
+#define LOAD_CHUNK  (16)
+    unsigned char cur[LOAD_CHUNK], tmp[2];
+
+    // TODO 加入标志符
+    // if (st.chip_cfg.dmp_loaded)
+    //     /* DMP should only be loaded once. */
+    //     return -1;
+
+    if (!firmware)
+        return -1;
+    for (ii = 0; ii < length; ii += this_write) {
+        this_write = min(LOAD_CHUNK, length - ii);
+        if (mpuWriteMem(ii, this_write, (unsigned char*)&firmware[ii]))
+            return -1;
+        if (mpu_read_mem(ii, this_write, cur))
+            return -1;
+        if (memcmp(firmware+ii, cur, this_write))
+            return -2;
+    }
+
+    /* Set program start address. */
+    tmp[0] = start_addr >> 8;
+    tmp[1] = start_addr & 0xFF;
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_DMP_PRGM_START_H, 2, tmp))
+        return -1;
+
+    // TODO dmp loaded标志
+    // st.chip_cfg.dmp_loaded = 1;
+    // st.chip_cfg.dmp_sample_rate = sample_rate;
+    return 0;
+}
+
+/**
+ *  @brief      Write to the DMP memory.
+ *  This function prevents I2C writes past the bank boundaries. The DMP memory
+ *  is only accessible when the chip is awake.
+ *  @param[in]  mem_addr    Memory location (bank << 8 | start address)
+ *  @param[in]  length      Number of bytes to write.
+ *  @param[in]  data        Bytes to write to memory.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpuWriteMem(unsigned short mem_addr, unsigned short length,
+        unsigned char *data)
+{
+    unsigned char tmp[2];
+
+    if (!data)
+        return -1;
+
+    tmp[0] = (unsigned char)(mem_addr >> 8);
+    tmp[1] = (unsigned char)(mem_addr & 0xFF);
+
+    /* Check bank boundaries. */
+    if (tmp[1] + length > BANK_SIZE)
+        return -1;
+
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp))
+        return -1;
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
+        return -1;
+    return 0;
+}
+
+/**
+ *  @brief      Read from the DMP memory.
+ *  This function prevents I2C reads past the bank boundaries. The DMP memory
+ *  is only accessible when the chip is awake.
+ *  @param[in]  mem_addr    Memory location (bank << 8 | start address)
+ *  @param[in]  length      Number of bytes to read.
+ *  @param[out] data        Bytes read from memory.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpuReadMem(unsigned short mem_addr, unsigned short length,
+        unsigned char *data)
+{
+    unsigned char tmp[2];
+
+    if (!data)
+        return -1;
+
+    tmp[0] = (unsigned char)(mem_addr >> 8);
+    tmp[1] = (unsigned char)(mem_addr & 0xFF);
+
+    /* Check bank boundaries. */
+    if (tmp[1] + length > BANK_SIZE)
+        return -1;
+
+    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp))
+        return -1;
+    if (I2Cdev::readBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
+        return -1;
+    return 0;
 }
 
 bool MPU6050::dmpPacketAvailable() {
