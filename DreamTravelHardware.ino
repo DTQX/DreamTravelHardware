@@ -39,6 +39,7 @@ uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
 uint16_t packetSize;    // expected DMP packet size (default is 42 bytes) mpu产生的数据大小
 uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint16_t maxFifoCount = 1024;
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
 // orientation/motion vars
@@ -149,11 +150,11 @@ int updateOneLastPacket(int index){
     mpuIntStatus = mpu.getIntStatus();
     // check for overflow (this should never happen unless our code is too inefficient)
     // if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
-    if (fifoCount >= 1024) {
+    if (fifoCount >= maxFifoCount) {
         // reset so we can continue cleanly
         mpu.resetFIFO();
         fifoCount = mpu.getFIFOCount();
-        Serial.print(F("FIFO overflow! fifoCount:"));
+        Serial.print(F("FIFO overflow! fifoCount new:"));
         Serial.println(fifoCount);
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
