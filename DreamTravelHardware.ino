@@ -13,7 +13,7 @@
 #include "BonesMap.h"
 
 // 开启调试
-//#define DEBUG
+#define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
@@ -138,18 +138,23 @@ int updateOneLastPacket(int index){
     if(fifoCount < packetSize){
         DEBUG_PRINT("MPU-");
         DEBUG_PRINT(mpuPins[index]);
-        DEBUG_PRINTLN(": not enough data");
+        DEBUG_PRINT(": not enough data. fifoCount:");
+        DEBUG_PRINT(fifoCount);
+        DEBUG_PRINT(", packetSize:");
+        DEBUG_PRINT(packetSize);
         return -1;
     }
 
     // 获取mpu数据
     mpuIntStatus = mpu.getIntStatus();
     // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+    // if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
+    if (fifoCount >= 1024) {
         // reset so we can continue cleanly
         mpu.resetFIFO();
         fifoCount = mpu.getFIFOCount();
-        Serial.println(F("FIFO overflow!"));
+        Serial.print(F("FIFO overflow! fifoCount:"));
+        Serial.println(fifoCount);
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {

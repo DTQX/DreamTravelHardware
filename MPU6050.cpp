@@ -3423,6 +3423,8 @@ int MPU6050::dmpEnableFeature(unsigned short mask)
     //     dmp.dmpPacketSize += 6;
     if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
         dmpPacketSize += 16;
+    DEBUG_PRINT("dmpEnableFeature dmpPacketSize: ");
+    DEBUG_PRINTLN(dmpPacketSize);
     // if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
     //     dmp.dmpPacketSize += 4;
 
@@ -3826,5 +3828,7 @@ uint8_t MPU6050::dmpReadAndProcessFIFOPacket(uint8_t numPackets, uint8_t *proces
 }
 
 uint16_t MPU6050::dmpGetFIFOPacketSize() {
+    DEBUG_PRINT("dmpPacketSize: ");
+    DEBUG_PRINTLN(dmpPacketSize);
     return dmpPacketSize;
 }
