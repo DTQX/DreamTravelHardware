@@ -512,6 +512,9 @@ THE SOFTWARE.
 #define BIT_STBY_XG         (0x04)
 #define BIT_STBY_YG         (0x02)
 #define BIT_STBY_ZG         (0x01)
+#define BIT_STBY_XA         (0x20)
+#define BIT_STBY_YA         (0x10)
+#define BIT_STBY_ZA         (0x08)
 #define BIT_STBY_XYZA       (BIT_STBY_XA | BIT_STBY_YA | BIT_STBY_ZA)
 
 #define BANK_SIZE   (256)   // 一个dmp bank大小
@@ -597,7 +600,6 @@ enum clock_sel_e {
     NUM_CLK
 };
 
-int packet_length = 0;
 
 class MPU6050 {
     public:
@@ -627,7 +629,6 @@ class MPU6050 {
 
         int dmp_set_fifo_rate(unsigned short rate);
 
-        int mpu_set_dmp_state(unsigned char enable)
 
 
         // AUX_VDDIO register

@@ -1,4 +1,4 @@
-#define DEBUG_LOG
+//#define DEBUG_LOG
 #ifdef DEBUG_LOG
     #define DEBUG_PRINT(x) Serial.print(x);
     #define DEBUG_PRINTF(x, y) Serial.print(x, y);

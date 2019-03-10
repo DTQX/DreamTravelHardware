@@ -263,7 +263,6 @@ void initDevice(){
         mpu.initialize();
         Serial.print(mpuPins[i]);
         Serial.print("--");
-        Serial.println(mpu.testConnection() ? F("connect success") : F("connect fail"));
         Serial.println();
 
         // load and configure the DMP

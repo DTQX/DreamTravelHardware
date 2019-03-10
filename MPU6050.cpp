@@ -3285,48 +3285,29 @@ uint8_t MPU6050::dmpInitialize() {
     dmpEnableFeature(dmpFeatures);
 
     dmp_set_fifo_rate(100);
+
+    DEBUG_PRINTLN(F("Setting DMP and FIFO_OFLOW interrupts enabled..."));
+    setIntEnabled(1<<MPU6050_INTERRUPT_FIFO_OFLOW_BIT|1<<MPU6050_INTERRUPT_DMP_INT_BIT);
+
+    DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
+    setRate(9); // 1khz / (1 + 4) = 200 Hz
+
+    DEBUG_PRINTLN(F("Resetting FIFO..."));
+    resetFIFO();
+
+    DEBUG_PRINTLN(F("Enabling FIFO..."));
+    setFIFOEnabled(true);
+
+    DEBUG_PRINTLN(F("Enabling DMP..."));
+    setDMPEnabled(true);
+
+    DEBUG_PRINTLN(F("Resetting DMP..."));
+    resetDMP();
     
     return 0; // success
 }
 
-/**
- *  @brief      Enable/disable DMP support.
- *  @param[in]  enable  1 to turn on the DMP.
- *  @return     0 if successful.
- */
-int MPU6050::mpu_set_dmp_state(unsigned char enable)
-{
-    unsigned char tmp;
-    if (st.chip_cfg.dmp_on == enable)
-        return 0;
 
-    if (enable) {
-        if (!st.chip_cfg.dmp_loaded)
-            return -1;
-        /* Disable data ready interrupt. */
-        set_int_enable(0);
-        /* Disable bypass mode. */
-        mpu_set_bypass(0);
-        /* Keep constant sample rate, FIFO rate controlled by DMP. */
-        mpu_set_sample_rate(st.chip_cfg.dmp_sample_rate);
-        /* Remove FIFO elements. */
-        tmp = 0;
-        i2c_write(st.hw->addr, 0x23, 1, &tmp);
-        st.chip_cfg.dmp_on = 1;
-        /* Enable DMP interrupt. */
-        set_int_enable(1);
-        mpu_reset_fifo();
-    } else {
-        /* Disable DMP interrupt. */
-        set_int_enable(0);
-        /* Restore FIFO settings. */
-        tmp = st.chip_cfg.fifo_enable;
-        i2c_write(st.hw->addr, 0x23, 1, &tmp);
-        st.chip_cfg.dmp_on = 0;
-        mpu_reset_fifo();
-    }
-    return 0;
-}
 
 
 /**
@@ -3435,15 +3416,15 @@ int MPU6050::dmpEnableFeature(unsigned short mask)
     /* Pedometer is always enabled. */
     resetFIFO();
 
-    packet_length = 0;
+    dmpPacketSize = 0;
     if (mask & DMP_FEATURE_SEND_RAW_ACCEL)
-        packet_length += 6;
+        dmpPacketSize += 6;
     // if (mask & DMP_FEATURE_SEND_ANY_GYRO)
-    //     dmp.packet_length += 6;
+    //     dmp.dmpPacketSize += 6;
     if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
-        packet_length += 16;
+        dmpPacketSize += 16;
     // if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-    //     dmp.packet_length += 4;
+    //     dmp.dmpPacketSize += 4;
 
     return 0;
 }
