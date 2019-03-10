@@ -3301,8 +3301,8 @@ uint8_t MPU6050::dmpInitialize() {
     DEBUG_PRINTLN(F("Enabling DMP..."));
     setDMPEnabled(true);
 
-    DEBUG_PRINTLN(F("Resetting DMP..."));
-    resetDMP();
+    // DEBUG_PRINTLN(F("Resetting DMP..."));
+    // resetDMP();
     
     return 0; // success
 }

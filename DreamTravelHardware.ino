@@ -137,12 +137,14 @@ int updateOneLastPacket(int index){
     fifoCount = mpu.getFIFOCount();
     // 判断数据是否足够, 不够则直接返回
     if(fifoCount < packetSize){
-        DEBUG_PRINT("MPU-");
-        DEBUG_PRINT(mpuPins[index]);
-        DEBUG_PRINT(": not enough data. fifoCount:");
-        DEBUG_PRINT(fifoCount);
-        DEBUG_PRINT(", packetSize:");
-        DEBUG_PRINT(packetSize);
+        #ifdef DEBUG
+        Serial.print("MPU-");
+        Serial.print(mpuPins[index]);
+        Serial.print(": not enough data. fifoCount:");
+        Serial.print(fifoCount);
+        Serial.print(", packetSize:");
+        Serial.println(packetSize);
+        #endif
         return -1;
     }
 
@@ -150,15 +152,17 @@ int updateOneLastPacket(int index){
     mpuIntStatus = mpu.getIntStatus();
     // check for overflow (this should never happen unless our code is too inefficient)
     // if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
-    if (fifoCount >= maxFifoCount) {
-        // reset so we can continue cleanly
-        mpu.resetFIFO();
-        fifoCount = mpu.getFIFOCount();
-        Serial.print(F("FIFO overflow! fifoCount new:"));
-        Serial.println(fifoCount);
+    // if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
+    if (fifoCount >= packetSize) {
+        #ifdef DEBUG
+        Serial.print("MPU-");
+        Serial.print(mpuPins[index]);
+        Serial.print(", fifoCount:");
+        Serial.print(fifoCount);
+        Serial.print(", packetSize:");
+        Serial.println(packetSize);
+        #endif
 
-    // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    } else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
         // wait for correct available data length, should be a VERY short wait
         while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
@@ -173,9 +177,23 @@ int updateOneLastPacket(int index){
             
             // mpu.dmpGetQuaternion(&q, fifoBuffer);
             // mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
-
-            DEBUG_PRINT(F("get quat i:"));
-            DEBUG_PRINTLN(index);
+            #ifdef DEBUG
+            Serial.print(F("get quat i:"));
+            Serial.println(index);
+            Serial.print("fifoBuffer: ");
+            Serial.print(fifoBuffer[0]);
+            Serial.print(" ");
+            Serial.print(fifoBuffer[1]);
+            Serial.print(" ");
+            Serial.print(fifoBuffer[2]);
+            Serial.print(" ");
+            Serial.print(fifoBuffer[3]);
+            Serial.print(" ");
+            Serial.print(fifoBuffer[4]);
+            Serial.print(" ");
+            Serial.println(fifoBuffer[9]);
+            #endif
+       
         }
     }
 
