@@ -3612,8 +3612,31 @@ void MPU6050::setDMPConfig2(uint8_t config)
 
 uint8_t MPU6050::dmpInitialize()
 {
+    DEBUG_PRINTLN(F("\n\nResetting MPU6050..."));
+    reset();
+    delay(30); // wait after reset
+
+    setIntDMPEnabled(false);
+    setIntEnabled(false);
+
+    // // disable sleep mode
+    DEBUG_PRINTLN(F("Disabling sleep mode..."));
+    setSleepEnabled(false);
+
+    // setup weird slave stuff (?)
+    DEBUG_PRINTLN(F("Setting slave 0 address to 0x7F..."));
+    setSlaveAddress(0, 0x7F);
+    DEBUG_PRINTLN(F("Disabling I2C Master mode..."));
+    setI2CMasterModeEnabled(false);
+    DEBUG_PRINTLN(F("Setting slave 0 address to 0x68 (self)..."));
+    setSlaveAddress(0, 0x68);
+    DEBUG_PRINTLN(F("Resetting I2C Master control..."));
+    resetI2CMaster();
+    delay(20);
+
     // 加载dmp程序
-    mpuLoadFirmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100);
+    DEBUG_PRINT(F("mpuLoadFirmware result: "));
+    DEBUG_PRINTLN(mpuLoadFirmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100));
 
     unsigned short dmpFeatures = DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO;
 
@@ -3936,10 +3959,16 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
     for (ii = 0; ii < length; ii += this_write)
     {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char *)&firmware[ii]))
-            return -1;
-        if (mpu_read_mem(ii, this_write, cur))
-            return -1;
+        int result = mpu_write_mem(ii, this_write, (unsigned char *)&firmware[ii]);
+        DEBUG_PRINT("mpu_write_mem: ");
+        DEBUG_PRINTLN(result);
+        if (result)
+            return -3;
+        result = mpu_read_mem(ii, this_write, cur);
+        DEBUG_PRINT("mpu_read_mem: ");
+        DEBUG_PRINTLN(result);
+        if (result)
+            return -4;
         if (memcmp(firmware + ii, cur, this_write))
             return -2;
     }
@@ -3978,12 +4007,12 @@ int MPU6050::mpu_write_mem(unsigned short mem_addr, unsigned short length,
 
     /* Check bank boundaries. */
     if (tmp[1] + length > BANK_SIZE)
-        return -1;
-
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp))
-        return -1;
+        return -2;
+    bool result = I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp)
+    if (result)
+        return -3;
     if (I2Cdev::writeBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
-        return -1;
+        return -4;
     return 0;
 }
 

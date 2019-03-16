@@ -255,7 +255,7 @@ void sendOneData(int index){
 // 选中mpu
 void selectMPU(int mpuPin){
     digitalWrite(mpuPin, LOW);
-    //delay(500);
+    delay(50);
 }
 
 // 取消选中mpu
@@ -282,7 +282,6 @@ void initDevice(){
     for(int i = 0; i<MPU_NUM; i++){
         // 选中mpu
         selectMPU(mpuPins[i]);
-         //delay(500);
         // mpu sample rate  200Hz
         mpu.initialize();
         Serial.print(mpuPins[i]);
