@@ -3943,6 +3943,10 @@ int MPU6050::dmp_enable_gyro_cal(unsigned char enable)
 int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmware,
                              unsigned short start_addr, unsigned short sample_rate)
 {
+    for(int i = 0; i<30; i++){
+        DEBUG_PRINT(firmware[i]);
+        DEBUG_PRINT("  ");
+    }
     unsigned short ii;
     unsigned short this_write;
     /* Must divide evenly into st.hw->bank_size to avoid bank crossings. */
@@ -3979,9 +3983,9 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
         DEBUG_PRINTLN(this_write);
         DEBUG_PRINT("firmware, cur: ");
         for(int i = 0; i<this_write; i++){
-            DEBUG_PRINT(*(firmware + ii + i));
+            DEBUG_PRINT(firmware[ii+i]);
             DEBUG_PRINT(", ");
-            DEBUG_PRINT(*(cur+i));
+            DEBUG_PRINT(cur[i]);
             DEBUG_PRINT("; ");
         }
         if (result)
