@@ -107,7 +107,7 @@ int MPU6050::setSensor(unsigned char sensors)
         data = 0;
     else
         data = BIT_SLEEP;
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_1, 1, &data))
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_1, 1, &data))
     {
         return -1;
     }
@@ -121,7 +121,7 @@ int MPU6050::setSensor(unsigned char sensors)
         data |= BIT_STBY_ZG;
     if (!(sensors & INV_XYZ_ACCEL))
         data |= BIT_STBY_XYZA;
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_2, 1, &data))
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_2, 1, &data))
     {
         return -1;
     }
@@ -3959,24 +3959,39 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
     for (ii = 0; ii < length; ii += this_write)
     {
         this_write = min(LOAD_CHUNK, length - ii);
+
         int result = mpu_write_mem(ii, this_write, (unsigned char *)&firmware[ii]);
-        DEBUG_PRINT("mpu_write_mem: ");
+        DEBUG_PRINT("mpu_write_mem result: ");
         DEBUG_PRINTLN(result);
         if (result)
             return -3;
+
         result = mpu_read_mem(ii, this_write, cur);
-        DEBUG_PRINT("mpu_read_mem: ");
+        DEBUG_PRINT("mpu_read_mem result: ");
         DEBUG_PRINTLN(result);
         if (result)
             return -4;
-        if (memcmp(firmware + ii, cur, this_write))
+        
+        result = memcmp(firmware + ii, cur, this_write);
+        DEBUG_PRINT("memcmp result: ");
+        DEBUG_PRINTLN(result);
+        DEBUG_PRINT("this_write : ");
+        DEBUG_PRINTLN(this_write);
+        DEBUG_PRINT("firmware, cur: ");
+        for(int i = 0; i<this_write; i++){
+            DEBUG_PRINT(*(firmware + ii + i));
+            DEBUG_PRINT(", ");
+            DEBUG_PRINT(*(cur+i));
+            DEBUG_PRINT("; ");
+        }
+        if (result)
             return -2;
     }
 
     /* Set program start address. */
     tmp[0] = start_addr >> 8;
     tmp[1] = start_addr & 0xFF;
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_DMP_PRGM_START_H, 2, tmp))
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_DMP_PRGM_START_H, 2, tmp))
         return -1;
 
     // TODO dmp loaded标志
@@ -4008,10 +4023,10 @@ int MPU6050::mpu_write_mem(unsigned short mem_addr, unsigned short length,
     /* Check bank boundaries. */
     if (tmp[1] + length > BANK_SIZE)
         return -2;
-    bool result = I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp)
-    if (result)
+    bool result = I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp);
+    if (!result)
         return -3;
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
         return -4;
     return 0;
 }
@@ -4040,9 +4055,9 @@ int MPU6050::mpu_read_mem(unsigned short mem_addr, unsigned short length,
     if (tmp[1] + length > BANK_SIZE)
         return -1;
 
-    if (I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp))
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_BANK_SEL, 2, tmp))
         return -1;
-    if (I2Cdev::readBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
+    if (!I2Cdev::readBytes(devAddr, MPU6050_RA_MEM_R_W, length, data))
         return -1;
     return 0;
 }
