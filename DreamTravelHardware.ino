@@ -13,7 +13,7 @@
 #include "BonesMap.h"
 
 // 开启调试
-#define DEBUG
+ #define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
@@ -24,7 +24,7 @@ const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 0;    // 数据发送间隔时间，单位ms
 int16_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
-unsigned long lastSendTime = 0;     // 数据上一次发送的时间
+unsigned long lastSendTime = 10;     // 数据上一次发送的时间
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -164,14 +164,14 @@ int updateOneLastPacket(int index){
                 // wait for correct available data length, should be a VERY short wait
         while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
-        #ifdef DEBUG
-        Serial.print("MPU-");
-        Serial.print(mpuPins[index]);
-        Serial.print(", fifoCount:");
-        Serial.print(fifoCount);
-        Serial.print(", packetSize:");
-        Serial.println(packetSize);
-        #endif
+        // #ifdef DEBUG
+        // Serial.print("MPU-");
+        // Serial.print(mpuPins[index]);
+        // Serial.print(", fifoCount:");
+        // Serial.print(fifoCount);
+        // Serial.print(", packetSize:");
+        // Serial.println(packetSize);
+        // #endif
 
 
         // 读取最新数据
@@ -185,22 +185,22 @@ int updateOneLastPacket(int index){
             
             // mpu.dmpGetQuaternion(&q, fifoBuffer);
             // mpu.dmpGetQuaternion(lastQuat[i], fifoBuffer);
-            #ifdef DEBUG
-            Serial.print(F("get quat i:"));
-            Serial.println(index);
-            Serial.print("fifoBuffer: ");
-            Serial.print(fifoBuffer[0]);
-            Serial.print(" ");
-            Serial.print(fifoBuffer[1]);
-            Serial.print(" ");
-            Serial.print(fifoBuffer[2]);
-            Serial.print(" ");
-            Serial.print(fifoBuffer[3]);
-            Serial.print(" ");
-            Serial.print(fifoBuffer[4]);
-            Serial.print(" ");
-            Serial.println(fifoBuffer[9]);
-            #endif
+            // #ifdef DEBUG
+            // Serial.print(F("get quat i:"));
+            // Serial.println(index);
+            // Serial.print("fifoBuffer: ");
+            // Serial.print(fifoBuffer[0]);
+            // Serial.print(" ");
+            // Serial.print(fifoBuffer[1]);
+            // Serial.print(" ");
+            // Serial.print(fifoBuffer[2]);
+            // Serial.print(" ");
+            // Serial.print(fifoBuffer[3]);
+            // Serial.print(" ");
+            // Serial.print(fifoBuffer[4]);
+            // Serial.print(" ");
+            // Serial.println(fifoBuffer[9]);
+            // #endif
        
         }
     }

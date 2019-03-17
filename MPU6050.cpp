@@ -3639,7 +3639,9 @@ uint8_t MPU6050::dmpInitialize()
     DEBUG_PRINTLN(mpuLoadFirmware(MPU6050_DMP_CODE_SIZE, dmpMemory, sStartAddress, 100));
 
     unsigned short dmpFeatures = DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO;
-
+    // DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+    //     DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
+    //     DMP_FEATURE_GYRO_CAL;
     dmpEnableFeature(dmpFeatures);
 
     dmp_set_fifo_rate(100);
@@ -3816,10 +3818,11 @@ int MPU6050::dmpEnableFeature(unsigned short mask)
     //     dmp.dmpPacketSize += 6;
     if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
         dmpPacketSize += 16;
+    // dmpPacketSize += 4;
     DEBUG_PRINT("dmpEnableFeature dmpPacketSize: ");
     DEBUG_PRINTLN(dmpPacketSize);
     // if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-    //     dmp.dmpPacketSize += 4;
+        
 
     return 0;
 }
