@@ -151,16 +151,19 @@ int updateOneLastPacket(int index){
     // 获取mpu数据
     mpuIntStatus = mpu.getIntStatus();
     // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT))) {
+    if (mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
         // reset so we can continue cleanly
         DEBUG_PRINT(F("FIFO overflow! fifoCount:"));
-        DEBUG_PRINTLN(fifoCount)
+        DEBUG_PRINTLN(fifoCount);
         mpu.resetFIFO();
-        // fifoCount = mpu.getFIFOCount();
+        fifoCount = mpu.getFIFOCount();
         
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    }else if (fifoCount >= packetSize) {
+    }else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
+                // wait for correct available data length, should be a VERY short wait
+        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+
         #ifdef DEBUG
         Serial.print("MPU-");
         Serial.print(mpuPins[index]);
@@ -260,7 +263,7 @@ void sendOneData(int index){
 // 选中mpu
 void selectMPU(int mpuPin){
     digitalWrite(mpuPin, LOW);
-    delay(50);
+    // delay(50);
 }
 
 // 取消选中mpu
