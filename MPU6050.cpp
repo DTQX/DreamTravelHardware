@@ -3616,23 +3616,23 @@ uint8_t MPU6050::dmpInitialize()
     reset();
     delay(30); // wait after reset
 
-    setIntDMPEnabled(false);
-    setIntEnabled(false);
+    // setIntDMPEnabled(false);
+    // setIntEnabled(false);
 
     // // disable sleep mode
     DEBUG_PRINTLN(F("Disabling sleep mode..."));
     setSleepEnabled(false);
 
-    // setup weird slave stuff (?)
-    DEBUG_PRINTLN(F("Setting slave 0 address to 0x7F..."));
-    setSlaveAddress(0, 0x7F);
-    DEBUG_PRINTLN(F("Disabling I2C Master mode..."));
-    setI2CMasterModeEnabled(false);
-    DEBUG_PRINTLN(F("Setting slave 0 address to 0x68 (self)..."));
-    setSlaveAddress(0, 0x68);
-    DEBUG_PRINTLN(F("Resetting I2C Master control..."));
-    resetI2CMaster();
-    delay(20);
+    // // setup weird slave stuff (?)
+    // DEBUG_PRINTLN(F("Setting slave 0 address to 0x7F..."));
+    // setSlaveAddress(0, 0x7F);
+    // DEBUG_PRINTLN(F("Disabling I2C Master mode..."));
+    // setI2CMasterModeEnabled(false);
+    // DEBUG_PRINTLN(F("Setting slave 0 address to 0x68 (self)..."));
+    // setSlaveAddress(0, 0x68);
+    // DEBUG_PRINTLN(F("Resetting I2C Master control..."));
+    // resetI2CMaster();
+    // delay(20);
 
     // 加载dmp程序
     DEBUG_PRINT(F("mpuLoadFirmware result: "));
@@ -3652,39 +3652,6 @@ uint8_t MPU6050::dmpInitialize()
 
     DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
     setRate(9); // 1khz / (1 + 4) = 200 Hz
-
-    DEBUG_PRINTLN(F("Setting external frame sync to TEMP_OUT_L[0]..."));
-    setExternalFrameSync(MPU6050_EXT_SYNC_TEMP_OUT_L);
-
-    DEBUG_PRINTLN(F("Setting DLPF bandwidth to 42Hz..."));
-    setDLPFMode(MPU6050_DLPF_BW_42);
-
-    DEBUG_PRINTLN(F("Setting gyro sensitivity to +/- 2000 deg/sec..."));
-    setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
-
-    DEBUG_PRINTLN(F("Setting DMP programm start address"));
-    //write start address MSB into register
-    setDMPConfig1(0x03);
-    //write start address LSB into register
-    setDMPConfig2(0x00);
-
-    DEBUG_PRINTLN(F("Clearing OTP Bank flag..."));
-    setOTPBankValid(false);
-
-    DEBUG_PRINTLN(F("Resetting FIFO..."));
-    resetFIFO();
-
-    DEBUG_PRINTLN(F("Setting motion detection threshold to 2..."));
-    setMotionDetectionThreshold(2);
-
-    DEBUG_PRINTLN(F("Setting zero-motion detection threshold to 156..."));
-    setZeroMotionDetectionThreshold(156);
-
-    DEBUG_PRINTLN(F("Setting motion detection duration to 80..."));
-    setMotionDetectionDuration(80);
-
-    DEBUG_PRINTLN(F("Setting zero-motion detection duration to 0..."));
-    setZeroMotionDetectionDuration(0);
 
     DEBUG_PRINTLN(F("Resetting FIFO..."));
     resetFIFO();
@@ -3708,6 +3675,8 @@ uint8_t MPU6050::dmpInitialize()
     {
         fifoCount = getFIFOCount();
         delay(100);
+        DEBUG_PRINT(F("Current FIFO count="));
+        DEBUG_PRINTLN(fifoCount);
     }
     getFIFOBytes(fifoBuffer, fifoCount);
 
@@ -3943,7 +3912,8 @@ int MPU6050::dmp_enable_gyro_cal(unsigned char enable)
 int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmware,
                              unsigned short start_addr, unsigned short sample_rate)
 {
-    for(int i = 0; i<30; i++){
+    DEBUG_PRINT("firmware");
+    for(int i = 0; i<16; i++){
         DEBUG_PRINT(firmware[i]);
         DEBUG_PRINT("  ");
     }
@@ -3964,8 +3934,11 @@ int MPU6050::mpuLoadFirmware(unsigned short length, const unsigned char *firmwar
     {
         this_write = min(LOAD_CHUNK, length - ii);
 
+        DEBUG_PRINT("ii : ");
+        DEBUG_PRINTLN(ii);
+
         int result = mpu_write_mem(ii, this_write, (unsigned char *)&firmware[ii]);
-        DEBUG_PRINT("mpu_write_mem result: ");
+        DEBUG_PRINT(", mpu_write_mem result: ");
         DEBUG_PRINTLN(result);
         if (result)
             return -3;

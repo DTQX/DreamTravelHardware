@@ -100,7 +100,7 @@ THE SOFTWARE.
 // after moving string constants to flash memory storage using the F()
 // compiler macro (Arduino IDE 1.0+ required).
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
     #define DEBUG_PRINT(x) Serial.print(x)
     #define DEBUG_PRINTF(x, y) Serial.print(x, y)
@@ -1164,7 +1164,7 @@ static const unsigned short sStartAddress = 0x0400;
 // this block of memory gets written to the MPU on start-up, and it seems
 // to be volatile memory, so it has to be done each time (it only takes ~1
 // second though)
-const unsigned char dmpMemory[MPU6050_DMP_CODE_SIZE] PROGMEM = {
+const unsigned char dmpMemory[MPU6050_DMP_CODE_SIZE] = {
     /* bank # 0 */
     0x00, 0x00, 0x70, 0x00, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00,
     0x00, 0x65, 0x00, 0x54, 0xff, 0xef, 0x00, 0x00, 0xfa, 0x80, 0x00, 0x0b, 0x12, 0x82, 0x00, 0x01,
