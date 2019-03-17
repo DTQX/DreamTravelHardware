@@ -22,7 +22,7 @@
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
-const int intervalTime = 10;    // 数据发送间隔时间，单位ms
+const int intervalTime = 0;    // 数据发送间隔时间，单位ms
 int16_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 
@@ -153,9 +153,11 @@ int updateOneLastPacket(int index){
     // check for overflow (this should never happen unless our code is too inefficient)
     if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT))) {
         // reset so we can continue cleanly
+        DEBUG_PRINT(F("FIFO overflow! fifoCount:"));
+        DEBUG_PRINTLN(fifoCount)
         mpu.resetFIFO();
-        fifoCount = mpu.getFIFOCount();
-        Serial.println(F("FIFO overflow!"));
+        // fifoCount = mpu.getFIFOCount();
+        
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     }else if (fifoCount >= packetSize) {
@@ -168,8 +170,6 @@ int updateOneLastPacket(int index){
         Serial.println(packetSize);
         #endif
 
-        // wait for correct available data length, should be a VERY short wait
-        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
         // 读取最新数据
         while(fifoCount / packetSize > 0){
