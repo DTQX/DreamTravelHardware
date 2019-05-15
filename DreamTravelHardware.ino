@@ -225,6 +225,45 @@ void sendOneData(int index){
     if(index == 0){
         #ifdef DEBUG
         Serial.print(START_CODE_1,HEX);
+        Serial.print(START_CODE_1,HEX);
+        Serial.print(" ");
+        #else
+        Serial.write(START_CODE_1);
+        Serial.write(START_CODE_1);
+        #endif
+    }
+    #ifdef DEBUG
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
+        Serial.print(lastPacket[index][j],HEX);
+        Serial.print("  ");
+    }
+    #else
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
+        Serial.write(lastPacket[index][j]);
+    }
+    // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+    // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+    // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+    // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+    #endif
+    // 发送数据包的结束编码
+    if(index == MPU_NUM - 1){
+        #ifdef DEBUG
+        Serial.print(START_CODE_2,HEX);
+        Serial.print(START_CODE_2,HEX);
+        #else
+        Serial.write(START_CODE_2);
+        Serial.write(START_CODE_2);
+        #endif
+    }
+}
+// 发送一个 mpu 的数据
+void sendOneData_back(int index){
+    //发送数据，如果是一个数据包的开始，则发送开始标志符
+    // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
+    if(index == 0){
+        #ifdef DEBUG
+        Serial.print(START_CODE_1,HEX);
         Serial.print(START_CODE_2,HEX);
         Serial.print(" ");
         #else
