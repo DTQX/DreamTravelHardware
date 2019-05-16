@@ -13,7 +13,7 @@
 #include "BonesMap.h"
 
 // 开启调试
-//#define DEBUG
+#define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
