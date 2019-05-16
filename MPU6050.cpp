@@ -4117,9 +4117,13 @@ uint8_t MPU6050::dmpGetQuaternion(int16_t *data, const uint8_t *packet)
     if (packet == 0)
         packet = dmpPacketBuffer;
     data[0] = ((packet[0] << 8) | packet[1]);
-    data[1] = ((packet[4] << 8) | packet[5]);
-    data[2] = ((packet[8] << 8) | packet[9]);
-    data[3] = ((packet[12] << 8) | packet[13]);
+    data[1] = ((packet[2] << 8) | packet[3]);
+    data[2] = ((packet[4] << 8) | packet[5]);
+    data[3] = ((packet[6] << 8) | packet[7]);
+    // data[0] = ((packet[0] << 8) | packet[1]);
+    // data[1] = ((packet[4] << 8) | packet[5]);
+    // data[2] = ((packet[8] << 8) | packet[9]);
+    // data[3] = ((packet[12] << 8) | packet[13]);
     return 0;
 }
 uint8_t MPU6050::dmpGetQuaternion(Quaternion *q, const uint8_t *packet)

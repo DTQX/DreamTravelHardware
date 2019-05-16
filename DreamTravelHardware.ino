@@ -23,7 +23,7 @@
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 0;    // 数据发送间隔时间，单位ms
-int16_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
+uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 10;     // 数据上一次发送的时间
 
 // class default I2C address is 0x68
