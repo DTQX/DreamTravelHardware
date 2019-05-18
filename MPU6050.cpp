@@ -53,15 +53,25 @@ MPU6050::MPU6050(uint8_t address) : devAddr(address)
  * the clock source to use the X Gyro for reference, which is slightly better than
  * the default internal clock source.
  */
-void MPU6050::initialize()
+int MPU6050::initialize()
 {
     reset();
     wakeUp();
-    setFullScaleGyroRange(MPU6050_GYRO_FS_250); // 250度
-    setFullScaleAccelRange(MPU6050_ACCEL_FS_2); //  2G
+
+    if(mpu_set_gyro_fsr(2000)){
+        Serial.println("mpu_set_gyro_fsr error!");
+    }
+    if(mpu_set_accel_fsr(2)){
+        Serial.println("mpu_set_accel_fsr error!");
+    }
+    // setFullScaleGyroRange(MPU6050_GYRO_FS_250); // 250度
+    // setFullScaleAccelRange(MPU6050_ACCEL_FS_2); //  2G
 
     DEBUG_PRINTLN(F("Setting DLPF bandwidth to 42Hz..."));
-    setDLPFMode(MPU6050_DLPF_BW_42);
+    // setDLPFMode(MPU6050_DLPF_BW_42);
+    if(mpu_set_lpf(42)){
+        Serial.println("mpu_set_lpf error!");
+    }
 
     DEBUG_PRINTLN(F("Setting sample rate to 200Hz..."));
     setRate(9); // 1khz / (1 + 9) = 100 Hz
@@ -84,6 +94,113 @@ void MPU6050::initialize()
     setRate(9); // 1khz / (1 + 9) = 100 Hz
 
     setSleepEnabled(false); // thanks to Jack Elston for pointing this one out!
+
+    return 0;
+}
+
+/**
+ *  @brief      Set digital low pass filter.
+ *  The following LPF settings are supported: 188, 98, 42, 20, 10, 5.
+ *  @param[in]  lpf Desired LPF setting.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpu_set_lpf(unsigned short lpf)
+{
+    unsigned char data;
+
+    if (lpf >= 188)
+        data = INV_FILTER_188HZ;
+    else if (lpf >= 98)
+        data = INV_FILTER_98HZ;
+    else if (lpf >= 42)
+        data = INV_FILTER_42HZ;
+    else if (lpf >= 20)
+        data = INV_FILTER_20HZ;
+    else if (lpf >= 10)
+        data = INV_FILTER_10HZ;
+    else
+        data = INV_FILTER_5HZ;
+
+
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_CONFIG, 1, &data))
+    {
+        return -1;
+    }
+// #ifdef MPU6500 //MPU6500 accel/gyro dlpf separately
+//     data = BIT_FIFO_SIZE_1024 | data;
+//     if (i2c_write(st.hw->addr, st.reg->accel_cfg2, 1, &data))
+//             return -1;
+// #endif
+
+    return 0;
+}
+
+/**
+ *  @brief      Set the accel full-scale range.
+ *  @param[in]  fsr Desired full-scale range.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpu_set_accel_fsr(unsigned char fsr)
+{
+    unsigned char data;
+
+
+    switch (fsr) {
+    case 2:
+        data = INV_FSR_2G << 3;
+        break;
+    case 4:
+        data = INV_FSR_4G << 3;
+        break;
+    case 8:
+        data = INV_FSR_8G << 3;
+        break;
+    case 16:
+        data = INV_FSR_16G << 3;
+        break;
+    default:
+        return -1;
+    }
+
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_GYRO_CONFIG, 1, &data))
+    {
+        return -1;
+    }
+    return 0;
+}
+
+/**
+ *  @brief      Set the gyro full-scale range.
+ *  @param[in]  fsr Desired full-scale range.
+ *  @return     0 if successful.
+ */
+int MPU6050::mpu_set_gyro_fsr(unsigned short fsr)
+{
+    unsigned char data;
+
+
+    switch (fsr) {
+    case 250:
+        data = INV_FSR_250DPS << 3;
+        break;
+    case 500:
+        data = INV_FSR_500DPS << 3;
+        break;
+    case 1000:
+        data = INV_FSR_1000DPS << 3;
+        break;
+    case 2000:
+        data = INV_FSR_2000DPS << 3;
+        break;
+    default:
+        return -1;
+    }
+
+    if (!I2Cdev::writeBytes(devAddr, MPU6050_RA_ACCEL_CONFIG, 1, &data))
+    {
+        return -1;
+    }
+    return 0;
 }
 
 /** Verify the I2C connection.
@@ -2681,7 +2798,11 @@ void MPU6050::resetSensors()
  */
 void MPU6050::reset()
 {
-    I2Cdev::writeBit(devAddr, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, true);
+    unsigned char data[6];
+
+    /* Reset device. */
+    data[0] = BIT_RESET;
+    I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_1, 1, data);
     delay(100);
 }
 
@@ -2690,7 +2811,11 @@ void MPU6050::reset()
  */
 void MPU6050::wakeUp()
 {
-    I2Cdev::writeBit(devAddr, MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, false);
+    unsigned char data[6];
+
+    /* Wake up chip. */
+    data[0] = 0x00;
+    I2Cdev::writeBytes(devAddr, MPU6050_RA_PWR_MGMT_1, 1, data);
 }
 
 /** Get sleep mode status.

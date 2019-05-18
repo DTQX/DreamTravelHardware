@@ -291,7 +291,13 @@ void initDevice(){
         // 选中mpu
         selectMPU(mpuPins[i]);
         // mpu sample rate  200Hz
-        mpu.initialize();
+        int result = mpu.initialize();
+        if(result){
+            Serial.print("mpu.initialize fail, result:");
+            Serial.println(result);
+            dmpReady = false;
+            return;
+        }
         Serial.print(mpuPins[i]);
         Serial.print("--");
         Serial.println();

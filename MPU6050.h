@@ -100,7 +100,7 @@ THE SOFTWARE.
 // after moving string constants to flash memory storage using the F()
 // compiler macro (Arduino IDE 1.0+ required).
 
-// #define DEBUG
+ #define DEBUG
 #ifdef DEBUG
     #define DEBUG_PRINT(x) Serial.print(x)
     #define DEBUG_PRINTF(x, y) Serial.print(x, y)
@@ -241,6 +241,22 @@ THE SOFTWARE.
 #define MPU6050_RA_FIFO_COUNTL      0x73
 #define MPU6050_RA_FIFO_R_W         0x74
 #define MPU6050_RA_WHO_AM_I         0x75
+
+/* gyro_fsr Full scale ranges. */
+#define INV_FSR_250DPS 0
+#define INV_FSR_500DPS 1    //1
+#define INV_FSR_1000DPS 2   //2
+#define INV_FSR_2000DPS 3    //3
+#define NUM_GYRO_FSR 4
+
+/* accel_fsr Full scale ranges. */
+#define    INV_FSR_2G  0
+#define    INV_FSR_4G  1
+#define    INV_FSR_8G  2
+#define    INV_FSR_16G  3
+#define    NUM_ACCEL_FSR  4
+
+#define BIT_RESET           (0x80)
 
 #define MPU6050_SELF_TEST_XA_1_BIT     0x07
 #define MPU6050_SELF_TEST_XA_1_LENGTH  0x03
@@ -591,6 +607,17 @@ THE SOFTWARE.
 
 #define CFG_6                   (2753)
 
+/* Filter configurations. */
+#define    INV_FILTER_256HZ_NOLPF2  0
+#define    INV_FILTER_188HZ  1
+#define    INV_FILTER_98HZ  2
+#define    INV_FILTER_42HZ  3
+#define    INV_FILTER_20HZ  4
+#define    INV_FILTER_10HZ  5
+#define    INV_FILTER_5HZ  6
+#define    INV_FILTER_2100HZ_NOLPF  7
+#define    NUM_FILTER  8
+
 
 // note: DMP code memory blocks defined at end of header file
 
@@ -605,7 +632,7 @@ class MPU6050 {
     public:
         MPU6050(uint8_t address=MPU6050_DEFAULT_ADDRESS);
 
-        void initialize();
+        int initialize();
         bool testConnection();
 
 
@@ -628,6 +655,12 @@ class MPU6050 {
         int dmp_enable_6x_lp_quat(unsigned char enable);
 
         int dmp_set_fifo_rate(unsigned short rate);
+
+        int mpu_set_gyro_fsr(unsigned short fsr);
+
+        int mpu_set_accel_fsr(unsigned char fsr);
+
+        int mpu_set_lpf(unsigned short lpf)
 
 
 
