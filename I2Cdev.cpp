@@ -578,6 +578,18 @@ bool I2Cdev::writeWord(uint8_t devAddr, uint8_t regAddr, uint16_t data) {
     return writeWords(devAddr, regAddr, 1, &data);
 }
 
+    int i2cdev_writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t* data){
+        if ( I2Cdev::writeBytes( devAddr,  regAddr,  length, data))
+        {
+            return 0;
+        }else
+        {
+            return 1;
+        }
+        
+        
+    }
+
 /** Write multiple bytes to an 8-bit device register.
  * @param devAddr I2C slave device address
  * @param regAddr First register address to write to
