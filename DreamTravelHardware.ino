@@ -13,8 +13,8 @@
 #include "BonesMap.h"
 #include "helper_3dmath.h"
 
-// #include "mpu6050.h"
-#include "C2CPP.h"
+#include "mpu6050.h"
+// #include "C2CPP.h"
 // 开启调试
  #define DEBUG
 
@@ -93,8 +93,8 @@ void setup() {
 //     // while (Serial.available() && Serial.read()); // empty buffer again
 
     // test
-    // Serial.print(addc());
-    Serial.print(readBit_c(44));
+    Serial.print(addc());
+    // Serial.print(readBit_c(44));
 }
 
 
