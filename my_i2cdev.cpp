@@ -2,8 +2,10 @@
 #include <Wire.h>
 #include <Arduino.h>
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
 uint16_t readTimeout = 1000;
-
 
 // TwoWire Wire;
 /** Write multiple bytes to an 8-bit device register.
@@ -11,9 +13,9 @@ uint16_t readTimeout = 1000;
  * @param regAddr First register address to write to
  * @param length Number of bytes to write
  * @param data Buffer to copy new data from
- * @return Status of operation (true = success)
+ * @return Status of operation (0 = success)
  */
-int8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
+uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
     // #define I2CDEV_SERIAL_DEBUG
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
@@ -38,7 +40,8 @@ int8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *d
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.println(". Done.");
     #endif
-    return status == 0;
+    // return status == 0;
+    return status;
 }
 
 
@@ -50,7 +53,7 @@ int8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *d
  * @param readTimeout Optional read readTimeout in milliseconds (0 to disable, leave off to use default class value in I2Cdev::readTimeout)
  * @return Number of bytes read (-1 indicates failure)
  */
-int8_t readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
+int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
@@ -97,3 +100,16 @@ int8_t readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data
 
     return count;
 }
+
+void delay_ms(unsigned long ms){
+    return delay(ms);
+}
+
+int get_ms(unsigned long *timestamp){
+    *timestamp = 0;
+    return 0;
+}
+
+#ifdef __cplusplus 
+}
+#endif

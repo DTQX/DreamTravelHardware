@@ -1,3 +1,4 @@
+
 /** mpu采样率 60Hz;  arduino数据发送频率 33.33Hz
  *
  *  
@@ -14,7 +15,6 @@
 #include "helper_3dmath.h"
 
 #include "mpu6050.h"
-// #include "C2CPP.h"
 // 开启调试
  #define DEBUG
 
@@ -22,12 +22,13 @@
 #define COM_RATE (115200)   // 串口通信速率
 
 // 数据发送相关
-#define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
+#define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 0;    // 数据发送间隔时间，单位ms
 uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 10;     // 数据上一次发送的时间
+double QUAT_SENS  = 1073741824.0;
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -81,6 +82,7 @@ void setup() {
 
     // initialize serial communication
     Serial.begin(COM_RATE);
+    delay(50);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // initialize device
@@ -93,7 +95,7 @@ void setup() {
 //     // while (Serial.available() && Serial.read()); // empty buffer again
 
     // test
-    Serial.print(addc());
+    
     // Serial.print(readBit_c(44));
 }
 
@@ -105,139 +107,112 @@ void setup() {
 // // ================================================================
 
 void loop() {
-//     // if programming failed, don't try to do anything
-//     if (!dmpReady) return;
+    // if programming failed, don't try to do anything
+    if (!dmpReady) return;
 
-//     for(int i = 0; i<MPU_NUM; i++){
-//         //  记录上一次发送时间
-//         lastSendTime = millis();
+    for(int i = 0; i<MPU_NUM; i++){
+        //  记录上一次发送时间
+        lastSendTime = millis();
 
-//         // 选中mpu
-//         selectMPU(mpuPins[i]);
+        // 选中mpu
+        selectMPU(mpuPins[i]);
        
-//         // 更新lastPacket
-//         updateOneLastPacket(i);
+        // 更新lastPacket
+        updateOneLastPacket(i);
+        // Serial.print("----------------");
 
-//         // 发送一个 mpu 的数据
-//         sendOneData(i);
+        // 发送一个 mpu 的数据
+        sendOneData(i);
 
-//         // 取消选中mpu
-//         unselectMPU(mpuPins[i]);
+        // 取消选中mpu
+        unselectMPU(mpuPins[i]);
 
-//         // 保证发送频率
-//         while( millis() - lastSendTime < intervalTime);
+        // 保证发送频率
+        while( millis() - lastSendTime < intervalTime);
 
-//     }
+    }
 
 }
 
-// // 更新一个 mpu 的lastPacket
-// int updateOneLastPacket(int index){
-//     // fifoCount = mpu.getFIFOCount();
-//     // 判断数据是否足够, 不够则直接返回
-//     if(fifoCount < packetSize){
-//         #ifdef DEBUG
-//         Serial.print("MPU-");
-//         Serial.print(mpuPins[index]);
-//         Serial.print(": not enough data. fifoCount:");
-//         Serial.print(fifoCount);
-//         Serial.print(", packetSize:");
-//         Serial.println(packetSize);
-//         #endif
-//         return -1;
-//     }
+// 更新一个 mpu 的lastPacket
+int updateOneLastPacket(int index){
 
-//     // 获取mpu数据
-//     // mpuIntStatus = mpu.getIntStatus();
-//     // check for overflow (this should never happen unless our code is too inefficient)
-//     if (mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) {
-//         // reset so we can continue cleanly
-//         DEBUG_PRINT(F("FIFO overflow! fifoCount:"));
-//         DEBUG_PRINTLN(fifoCount);
-//         // mpu.resetFIFO();
-//         // fifoCount = mpu.getFIFOCount();
-        
+    int readResult = mpu_read_latest_fifo(fifoBuffer);
+    Serial.print("mpu_read_latest_fifo result: ");
+    Serial.println(readResult);
+    if(readResult){
+        return -1;
+    }
+    
+    // memcpy(lastPacket[index], fifoBuffer, 16 * sizeof(uint8_t));
 
-//     // otherwise, check for DMP data ready interrupt (this should happen frequently)
-//     }else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
-//                 // wait for correct available data length, should be a VERY short wait
-//         // while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
+    // mpu数据填充到 lastPacket
+    for (size_t i = 0; i < MPU_DATA_SIZE; i++)
+    {
+        lastPacket[index][i] = fifoBuffer[i];
+    }
+    
+    return 1;
+}
 
-//         // #ifdef DEBUG
-//         // Serial.print("MPU-");
-//         // Serial.print(mpuPins[index]);
-//         // Serial.print(", fifoCount:");
-//         // Serial.print(fifoCount);
-//         // Serial.print(", packetSize:");
-//         // Serial.println(packetSize);
-//         // #endif
+// 发送一个 mpu 的数据
+void sendOneData(int index){
+    //发送数据，如果是一个数据包的开始，则发送开始标志符
+    // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
+    if(index == 0){
+        #ifdef DEBUG
+        Serial.print(START_CODE_1,HEX);
+        Serial.print(START_CODE_2,HEX);
+        Serial.print(" ");
+        #else
+        Serial.write(START_CODE_1);
+        Serial.write(START_CODE_2);
+        #endif
+    }
+    #ifdef DEBUG
+    // for(int j = 0; j < MPU_DATA_SIZE; j++){
+        // Serial.print(lastPacket[index][j],HEX);
 
-
-//         // 读取最新数据
-//         while(fifoCount / packetSize > 0){
-//             // read a packet from FIFO
-//             // mpu.getFIFOBytes(fifoBuffer, packetSize);
-
-//             // track FIFO count here in case there is > 1 packet available
-//             // (this lets us immediately read more without waiting for an interrupt)
-//             fifoCount -= packetSize;
-//         }
-//     }
-
-//     // mpu数据填充到 lastPacket
-//     lastPacket[index][0] = fifoBuffer[0];
-//     lastPacket[index][1] = fifoBuffer[1];
-//     lastPacket[index][2] = fifoBuffer[4];
-//     lastPacket[index][3] = fifoBuffer[5];
-//     lastPacket[index][4] = fifoBuffer[8];
-//     lastPacket[index][5] = fifoBuffer[9];
-//     lastPacket[index][6] = fifoBuffer[12];
-//     lastPacket[index][7] = fifoBuffer[13];
-
-//     return 1;
-// }
-
-// // 发送一个 mpu 的数据
-// void sendOneData(int index){
-//     //发送数据，如果是一个数据包的开始，则发送开始标志符
-//     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
-//     if(index == 0){
-//         #ifdef DEBUG
-//         Serial.print(START_CODE_1,HEX);
-//         Serial.print(START_CODE_2,HEX);
-//         Serial.print(" ");
-//         #else
-//         Serial.write(START_CODE_1);
-//         Serial.write(START_CODE_2);
-//         #endif
-//     }
-//     #ifdef DEBUG
-//     for(int j = 0; j < MPU_DATA_SIZE; j++){
-//         Serial.print(lastPacket[index][j],HEX);
-//         Serial.print("  ");
-//     }
-//     #else
-//     for(int j = 0; j < MPU_DATA_SIZE; j++){
-//         Serial.write(lastPacket[index][j]);
-//     }
-//     // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
-//     // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
-//     // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
-//     // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
-//     #endif
-//     // 发送数据包的结束编码, 不再发送结束编码
-//     #ifdef DEBUG
-//     if(index == MPU_NUM - 1){
-//       Serial.println();
-//     //     #ifdef DEBUG
-//     //     //Serial.println(START_CODE_2,HEX);
-//     //     Serial.print(START_CODE_2,HEX);
-//     //     #else
-//     //     Serial.write(START_CODE_2);
-//     //     #endif
-//     }
-//     #endif
-// }
+        long quat[4];
+        quat[0] = ((long)lastPacket[index][0] << 24) | ((long)lastPacket[index][1] << 16) |
+            ((long)lastPacket[index][2] << 8) | lastPacket[index][3];
+        quat[1] = ((long)lastPacket[index][4] << 24) | ((long)lastPacket[index][5] << 16) |
+            ((long)lastPacket[index][6] << 8) | lastPacket[index][7];
+        quat[2] = ((long)lastPacket[index][8] << 24) | ((long)lastPacket[index][9] << 16) |
+            ((long)lastPacket[index][10] << 8) | lastPacket[index][11];
+        quat[3] = ((long)lastPacket[index][12] << 24) | ((long)lastPacket[index][13] << 16) |
+            ((long)lastPacket[index][14] << 8) | lastPacket[index][15];
+        Serial.print(quat[0] / QUAT_SENS);
+        Serial.print("  ");
+        Serial.print(quat[1] / QUAT_SENS);
+        Serial.print("  ");
+        Serial.print(quat[2] / QUAT_SENS);
+        Serial.print("  ");
+        Serial.print(quat[3] / QUAT_SENS);
+        Serial.print("  ");
+    // }
+    #else
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
+        Serial.write(lastPacket[index][j]);
+    }
+    // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
+    // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
+    // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
+    // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
+    #endif
+    // 发送数据包的结束编码, 不再发送结束编码
+    #ifdef DEBUG
+    if(index == MPU_NUM - 1){
+      Serial.println();
+    //     #ifdef DEBUG
+    //     //Serial.println(START_CODE_2,HEX);
+    //     Serial.print(START_CODE_2,HEX);
+    //     #else
+    //     Serial.write(START_CODE_2);
+    //     #endif
+    }
+    #endif
+}
 
 // 选中mpu
 void selectMPU(int mpuPin){
@@ -266,9 +241,24 @@ void initMpuPins(){
 // initialize device
 void initDevice(){
     Serial.println(F("Initializing I2C devices..."));
+    int innerResultCode[2] = {0,0};
+    int resultCode;
     for(int i = 0; i<MPU_NUM; i++){
         // 选中mpu
         selectMPU(mpuPins[i]);
+
+        resultCode = my_mpu_init(innerResultCode);
+        if(resultCode){
+            // Serial.print(F("my_mpu_init resultCode: "));
+            Serial.print(resultCode);
+            Serial.print("  ");
+            // Serial.print(" innerResultCode: ");
+            Serial.println(innerResultCode[0]);
+            Serial.print("  ");
+            // Serial.print(" innerResultCode: ");
+            Serial.println(innerResultCode[1]);
+            dmpReady = false;
+        }
         // mpu sample rate  200Hz
         // int result = mpu.initialize();
         // if(result){
