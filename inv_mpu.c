@@ -695,7 +695,7 @@ int mpu_read_reg(unsigned char reg, unsigned char *data)
  *  @param[in]  int_param   Platform-specific parameters to interrupt API.
  *  @return     0 if successful.
  */
-int mpu_init(struct int_param_s *int_param, int* innerResultCode)
+int mpu_init(struct int_param_s *int_param)
 {
     unsigned char data[6];
 
@@ -764,9 +764,12 @@ int mpu_init(struct int_param_s *int_param, int* innerResultCode)
         return -1;
 #else
     /* Already disabled by setup_compass. */
-    innerResultCode[1] = mpu_set_bypass(0);
-    if (innerResultCode[1])
+    // innerResultCode[1] = mpu_set_bypass(0);
+    // if (innerResultCode[1])
+    //     return 8;
+    if(mpu_set_bypass(0)){
         return 8;
+    }
 #endif
 
     mpu_set_sensors(0);

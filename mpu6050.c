@@ -139,18 +139,24 @@ static inline unsigned short inv_orientation_matrix_to_scalar(
     return scalar;
 }
 
-uint8_t my_mpu_init(int * innerResultCode){
+int my_mpu_init(int * innerResultCode){
     unsigned char accel_fsr;
     unsigned short gyro_rate, gyro_fsr;
     unsigned long timestamp;
     struct int_param_s int_param;
-
+    int resultCode = 0;
     /* Set up gyro.
      * Every function preceded by mpu_ is a driver function and can be found
      * in inv_mpu.h.
      */
-    innerResultCode[0] = mpu_init(&int_param, innerResultCode);
-    if (innerResultCode[0]){
+    // resultCode = mpu_init(&int_param);
+    // if (resultCode){
+    //     // TODO Arduino reset；
+        
+    //     return 1;
+    // }
+    innerResultCode[0] = mpu_init(&int_param);
+    if (innerResultCode[0] != 0){
         // TODO Arduino reset；
         
         return 1;
@@ -163,36 +169,36 @@ uint8_t my_mpu_init(int * innerResultCode){
 
     /* Get/set hardware configuration. Start gyro. */
     /* Wake up all sensors. */
-    innerResultCode[0] = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    if (innerResultCode[0]){
+    resultCode = mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+    if (resultCode){
         return 2;
     }
     
     /* Push both gyro and accel data into the FIFO. */
     
-    innerResultCode[0] = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-    if (innerResultCode[0]){
+    resultCode = mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+    if (resultCode){
         return 3;
     }
     
-    innerResultCode[0] = mpu_set_sample_rate(DEFAULT_MPU_HZ);
-    if (innerResultCode[0]){
+    resultCode = mpu_set_sample_rate(DEFAULT_MPU_HZ);
+    if (resultCode){
         return 4;
     }
     /* Read back configuration in case it was set improperly. */
     
-    innerResultCode[0] = mpu_get_sample_rate(&gyro_rate);
-    if (innerResultCode[0]){
+    resultCode = mpu_get_sample_rate(&gyro_rate);
+    if (resultCode){
         return 5;
     }
     
-    innerResultCode[0] = mpu_get_gyro_fsr(&gyro_fsr);
-    if (innerResultCode[0]){
+    resultCode = mpu_get_gyro_fsr(&gyro_fsr);
+    if (resultCode){
         return 6;
     }
     
-    innerResultCode[0] = mpu_get_accel_fsr(&accel_fsr);
-    if (innerResultCode[0]){
+    resultCode = mpu_get_accel_fsr(&accel_fsr);
+    if (resultCode){
         return 7;
     }
 
@@ -233,25 +239,25 @@ uint8_t my_mpu_init(int * innerResultCode){
      * be used in combination with DMP_FEATURE_SEND_RAW_GYRO.
      */
     
-    innerResultCode[0] = dmp_load_motion_driver_firmware();
-    if (innerResultCode[0]){
-        return -8;
+    resultCode = dmp_load_motion_driver_firmware();
+    if (resultCode){
+        return 8;
     }
     
-    innerResultCode[0] = dmp_set_orientation(
+    resultCode = dmp_set_orientation(
         inv_orientation_matrix_to_scalar(gyro_orientation));
-    if (innerResultCode[0]){
-        return -9;
+    if (resultCode){
+        return 9;
     }
     
-    innerResultCode[0] = dmp_register_tap_cb(tap_cb);
-    if (innerResultCode[0]){
-        return -10;
+    resultCode = dmp_register_tap_cb(tap_cb);
+    if (resultCode){
+        return 10;
     }
     
-    innerResultCode[0] = dmp_register_android_orient_cb(android_orient_cb);
-    if (innerResultCode[0]){
-        return -11;
+    resultCode = dmp_register_android_orient_cb(android_orient_cb);
+    if (resultCode){
+        return 11;
     }
 
     /*
@@ -269,25 +275,27 @@ uint8_t my_mpu_init(int * innerResultCode){
         DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
         DMP_FEATURE_GYRO_CAL;
     
-    innerResultCode[0] = dmp_enable_feature(hal.dmp_features);
-    if (innerResultCode[0]){
-        return -12;
+    resultCode = dmp_enable_feature(hal.dmp_features);
+    if (resultCode){
+        return 12;
     }
     
-    innerResultCode[0] = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
-    if (innerResultCode[0]){
-        return -13;
+    resultCode = dmp_set_fifo_rate(DEFAULT_MPU_HZ);
+    if (resultCode){
+        return 13;
     }
     
-    innerResultCode[0] = mpu_set_dmp_state(1);
-    if (innerResultCode[0]){
-        return -14;
+    resultCode = mpu_set_dmp_state(1);
+    if (resultCode){
+        return 14;
     }
     hal.dmp_on = 1;
+    return 0;
+
 
 }
 
 int mpu_read_latest_fifo(unsigned char *fifo_data){
     /* Get a packet. */
-    return mpu_read_latest_fifo_stream(packetLength, fifo_data);
+    return mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifo_data);
 }

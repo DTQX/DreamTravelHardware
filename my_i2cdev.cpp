@@ -7,6 +7,8 @@ extern "C" {
 #endif
 uint16_t readTimeout = 1000;
 
+//  #define I2CDEV_SERIAL_DEBUG
+
 // TwoWire Wire;
 /** Write multiple bytes to an 8-bit device register.
  * @param devAddr I2C slave device address
@@ -51,7 +53,7 @@ uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *
  * @param length Number of bytes to read
  * @param data Buffer to store read data in
  * @param readTimeout Optional read readTimeout in milliseconds (0 to disable, leave off to use default class value in I2Cdev::readTimeout)
- * @return Number of bytes read (-1 indicates failure)
+ * @return 0 success
  */
 int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
     #ifdef I2CDEV_SERIAL_DEBUG
@@ -98,7 +100,12 @@ int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *da
         Serial.println(" read).");
     #endif
 
-    return count;
+    if(count == length){
+        return 0;
+    }else{
+        return 1;
+    }
+    
 }
 
 void delay_ms(unsigned long ms){

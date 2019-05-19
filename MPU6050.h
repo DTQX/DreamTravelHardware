@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-uint8_t my_mpu_init(int * innerResultCode);
+int my_mpu_init(int * innerResultCode);
 int mpu_read_latest_fifo(unsigned char *fifo_data);
 
 #ifdef __cplusplus 

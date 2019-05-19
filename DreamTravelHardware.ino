@@ -9,7 +9,7 @@
 #include "I2Cdev.h"
 
 // #include "MPU6050.h" 
-
+#include "my_log.h"
 #include "Wire.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
@@ -136,11 +136,14 @@ void loop() {
 
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
+    // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
 
     int readResult = mpu_read_latest_fifo(fifoBuffer);
-    Serial.print("mpu_read_latest_fifo result: ");
-    Serial.println(readResult);
+    
     if(readResult){
+
+        DEBUG_PRINT("mpu_read_latest_fifo error result: ");
+        DEBUG_PRINTLN(readResult);
         return -1;
     }
     
@@ -243,69 +246,24 @@ void initDevice(){
     Serial.println(F("Initializing I2C devices..."));
     int innerResultCode[2] = {0,0};
     int resultCode;
-    for(int i = 0; i<MPU_NUM; i++){
+    for(int i = 0; i< MPU_NUM; i++){
         // 选中mpu
         selectMPU(mpuPins[i]);
 
+        delay(20);
+
         resultCode = my_mpu_init(innerResultCode);
         if(resultCode){
-            // Serial.print(F("my_mpu_init resultCode: "));
-            Serial.print(resultCode);
-            Serial.print("  ");
-            // Serial.print(" innerResultCode: ");
-            Serial.println(innerResultCode[0]);
-            Serial.print("  ");
-            // Serial.print(" innerResultCode: ");
-            Serial.println(innerResultCode[1]);
+            DEBUG_PRINT(F("my_mpu_init resultCode: "));
+            DEBUG_PRINT(resultCode);
+            DEBUG_PRINT("  ");
+            DEBUG_PRINT(" innerResultCode 0: ");
+            DEBUG_PRINT(innerResultCode[0]);
+            DEBUG_PRINT("  ");
+            DEBUG_PRINT(" innerResultCode 1: ");
+            DEBUG_PRINTLN(innerResultCode[1]);
             dmpReady = false;
         }
-        // mpu sample rate  200Hz
-        // int result = mpu.initialize();
-        // if(result){
-        //     Serial.print("mpu.initialize fail, result:");
-        //     Serial.println(result);
-        //     dmpReady = false;
-        //     return;
-        // }
-        // Serial.print(mpuPins[i]);
-        // Serial.print("--");
-        // Serial.println();
-
-        // // load and configure the DMP
-        // Serial.println(F("Initializing DMP..."));
-        // devStatus = mpu.dmpInitialize();
-        // // supply your own gyro offsets here, scaled for min sensitivity
-        // // mpu.setXGyroOffset(220);
-        // // mpu.setYGyroOffset(76);
-        // // mpu.setZGyroOffset(-85);
-        // // mpu.setXGyroOffset(0);
-        // // mpu.setYGyroOffset(0);
-        // // mpu.setZGyroOffset(0);
-        // // mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
-
-        // // make sure it worked (returns 0 if so)
-        // if (devStatus == 0) {
-        //     // turn on the DMP, now that it's ready
-        //     Serial.println(F("Enabling DMP... "));
-        //     Serial.print(mpuPins[i]);
-        //     mpu.setDMPEnabled(true);
-        //     mpuIntStatus = mpu.getIntStatus();
-        //     dmpReady = dmpReady && true;
-        //     // get expected DMP packet size for later comparison
-        //     packetSize = mpu.dmpGetFIFOPacketSize();
-        // } else {
-        //     // ERROR!
-        //     // 1 = initial memory load failed
-        //     // 2 = DMP configuration updates failed
-        //     // (if it's going to break, usually the code will be 1)
-        //     dmpReady = dmpReady && false;
-        //     Serial.print(mpuPins[i]);
-        //     Serial.print(F("DMP Initialization failed (code "));
-        //     Serial.print(devStatus);
-        //     Serial.println(F(")"));
-        // }
-
-        // Serial.println();
         
         // 取消选中mpu
         unselectMPU(mpuPins[i]); 
