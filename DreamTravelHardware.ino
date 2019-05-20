@@ -108,7 +108,7 @@ void setup() {
 
 void loop() {
     // if programming failed, don't try to do anything
-    if (!dmpReady) return;
+    // if (!dmpReady) return;
 
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
@@ -165,11 +165,11 @@ void sendOneData(int index){
     if(index == 0){
         #ifdef DEBUG
         Serial.print(START_CODE_1,HEX);
-        Serial.print(START_CODE_2,HEX);
+        Serial.print(START_CODE_1,HEX);
         Serial.print(" ");
         #else
         Serial.write(START_CODE_1);
-        Serial.write(START_CODE_2);
+        Serial.write(START_CODE_1);
         #endif
     }
     #ifdef DEBUG
@@ -204,17 +204,20 @@ void sendOneData(int index){
     // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
     #endif
     // 发送数据包的结束编码, 不再发送结束编码
-    #ifdef DEBUG
     if(index == MPU_NUM - 1){
-      Serial.println();
-    //     #ifdef DEBUG
-    //     //Serial.println(START_CODE_2,HEX);
-    //     Serial.print(START_CODE_2,HEX);
-    //     #else
-    //     Serial.write(START_CODE_2);
-    //     #endif
+        // #ifdef DEBUG
+      
+        // Serial.println();
+        // #endif
+
+        #ifdef DEBUG
+        Serial.print(START_CODE_2,HEX);
+        Serial.println(START_CODE_2,HEX);
+        #else
+        Serial.write(START_CODE_2);
+        Serial.write(START_CODE_2);
+        #endif
     }
-    #endif
 }
 
 // 选中mpu
@@ -254,16 +257,21 @@ void initDevice(){
 
         resultCode = my_mpu_init(innerResultCode);
         if(resultCode){
-            DEBUG_PRINT(F("my_mpu_init resultCode: "));
-            DEBUG_PRINT(resultCode);
-            DEBUG_PRINT("  ");
-            DEBUG_PRINT(" innerResultCode 0: ");
-            DEBUG_PRINT(innerResultCode[0]);
-            DEBUG_PRINT("  ");
-            DEBUG_PRINT(" innerResultCode 1: ");
-            DEBUG_PRINTLN(innerResultCode[1]);
+            Serial.print(F("my_mpu_init error pin-"));
+            Serial.print(mpuPins[i]);
+            Serial.print(" resultCode: ");
+            Serial.print(resultCode);
+            Serial.print("  ");
+            Serial.print(" innerResultCode 0: ");
+            Serial.print(innerResultCode[0]);
+            Serial.print("  ");
+            Serial.print(" innerResultCode 1: ");
+            Serial.println(innerResultCode[1]);
             dmpReady = false;
         }
+
+        DEBUG_PRINT("my_mpu_init success pin-");
+        DEBUG_PRINTLN(mpuPins[i]);
         
         // 取消选中mpu
         unselectMPU(mpuPins[i]); 
