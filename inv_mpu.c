@@ -2908,22 +2908,22 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
         return -1;
 
     if (!firmware)
-        return -1;
+        return -2;
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
         if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
-            return -1;
+            return -3;
         if (mpu_read_mem(ii, this_write, cur))
-            return -1;
+            return -4;
         if (memcmp(firmware+ii, cur, this_write))
-            return -2;
+            return -5;
     }
 
     /* Set program start address. */
     tmp[0] = start_addr >> 8;
     tmp[1] = start_addr & 0xFF;
     if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp))
-        return -1;
+        return -6;
 
     st.chip_cfg.dmp_loaded = 1;
     st.chip_cfg.dmp_sample_rate = sample_rate;

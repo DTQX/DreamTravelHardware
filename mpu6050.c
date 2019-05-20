@@ -238,11 +238,16 @@ int my_mpu_init(int * innerResultCode){
      * DMP_FEATURE_SEND_CAL_GYRO: Add calibrated gyro data to the FIFO. Cannot
      * be used in combination with DMP_FEATURE_SEND_RAW_GYRO.
      */
-    
-    resultCode = dmp_load_motion_driver_firmware();
-    if (resultCode){
+    innerResultCode[0] =  dmp_load_motion_driver_firmware();
+    if (innerResultCode[0] != 0){
+        // TODO Arduino reset；
+        
         return 8;
     }
+    // resultCode = dmp_load_motion_driver_firmware();
+    // if (resultCode){
+    //     return 8;
+    // }
     
     resultCode = dmp_set_orientation(
         inv_orientation_matrix_to_scalar(gyro_orientation));
