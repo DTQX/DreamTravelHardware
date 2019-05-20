@@ -219,13 +219,13 @@ void sendOneData(int index){
 
 // 选中mpu
 void selectMPU(int mpuPin){
-    digitalWrite(mpuPin, LOW);
+    // digitalWrite(mpuPin, LOW);
     // delay(50);
 }
 
 // 取消选中mpu
 void unselectMPU(int mpuPin){
-    digitalWrite(mpuPin, HIGH);
+    // digitalWrite(mpuPin, HIGH);
     //delay(500);
 }
 
