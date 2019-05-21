@@ -10,7 +10,6 @@
 
 // #include "MPU6050.h" 
 #include "my_log.h"
-#include "Wire.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
 
