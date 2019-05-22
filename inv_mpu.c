@@ -24,6 +24,8 @@
 #include <math.h>
 #include "inv_mpu.h"
 
+#include "serial_c.h"
+
 #define MPU6050
 
 /* The following functions must be defined for this platform:
@@ -2911,8 +2913,13 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
         return -2;
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
+        int result = mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]);
+        if (result){
+            serial_print("sd");
             return -3;
+
+        }
+            
         if (mpu_read_mem(ii, this_write, cur))
             return -4;
         if (memcmp(firmware+ii, cur, this_write))

@@ -43,8 +43,12 @@ THE SOFTWARE.
 ===============================================
 */
 
+
 #include "I2Cdev.h"
-#include "Wire.h"
+// #include "Wire.h"
+
+// #define I2CDEV_SERIAL_DEBUG
+
 
 
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_SBWIRE
@@ -627,7 +631,7 @@ bool I2Cdev::writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_
         Wire.endTransmission();
 		#elif (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE && ARDUINO >= 100 \
 			|| I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_SBWIRE && ARDUINO >= 100)
-	status = Wire.endTransmission();
+	status = Wire.write();
     #elif (I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE)
         Fastwire::stop();
         //status = Fastwire::endTransmission();
