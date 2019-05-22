@@ -76,7 +76,7 @@ void dmpDataReady() {
 void setup() {
     // 初始化Wire
     Wire.begin();
-    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    // Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
     
 
     // TODO 加入连接协议
