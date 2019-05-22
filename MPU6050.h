@@ -660,7 +660,7 @@ class MPU6050 {
 
         int mpu_set_accel_fsr(unsigned char fsr);
 
-        int mpu_set_lpf(unsigned short lpf)
+        int mpu_set_lpf(unsigned short lpf);
 
 
 
