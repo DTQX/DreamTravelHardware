@@ -1,6 +1,6 @@
 #include "my_i2cdev.h"
 #include <Wire.h>
-// #include <Arduino.h>
+#include <Arduino.h>
 // #include "I2Cdev.h"
 
 #ifdef __cplusplus 
@@ -56,12 +56,51 @@ uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *
  */
 int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
     
-    if(I2Cdev::readBytes( devAddr,  regAddr,  length,  data) != -1){
-        return 0;
-    }else{
-        return 1;
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print("I2C (0x");
+        Serial.print(devAddr, HEX);
+        Serial.print(") reading ");
+        Serial.print(length, DEC);
+        Serial.print(" bytes from 0x");
+        Serial.print(regAddr, HEX);
+        Serial.print("...");
+    #endif
+
+    int8_t count = 0;
+    uint32_t t1 = millis();
+    // Arduino v1.0.1+, Wire library
+    // Adds official support for repeated start condition, yay!
+
+    // I2C/TWI subsystem uses internal buffer that breaks with large data requests
+    // so if user requests more than BUFFER_LENGTH bytes, we have to do it in
+    // smaller chunks instead of all at once
+    for (uint8_t k = 0; k < length; k += min((int)length, BUFFER_LENGTH)) {
+        Wire.beginTransmission(devAddr);
+        Wire.write(regAddr);
+        Wire.endTransmission();
+        Wire.beginTransmission(devAddr);
+        Wire.requestFrom(devAddr, (uint8_t)min(length - k, BUFFER_LENGTH));
+
+        for (; Wire.available() && (readTimeout == 0 || millis() - t1 < readTimeout); count++) {
+            data[count] = Wire.read();
+            #ifdef I2CDEV_SERIAL_DEBUG
+                Serial.print(data[count], HEX);
+                if (count + 1 < length) Serial.print(" ");
+            #endif
+        }
     }
-    
+
+    // TODO加入定时中断，超时则退出
+    // check for readTimeout
+    if (readTimeout > 0 && millis() - t1 >= readTimeout && count < length) count = -1; // readTimeout
+
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print(". Done (");
+        Serial.print(count, DEC);
+        Serial.println(" read).");
+    #endif
+
+    return count;
 }
 
 void delay_ms(unsigned long ms){
