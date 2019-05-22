@@ -42,7 +42,7 @@ uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.println(". Done.");
     #endif
-    return status == 0;
+    return status;
 }
 
 
@@ -99,8 +99,13 @@ int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *da
         Serial.print(count, DEC);
         Serial.println(" read).");
     #endif
-
-    return count;
+    if(count != -1){
+        return 0;
+    }else
+    {
+        return 1;
+    }
+    
 }
 
 void delay_ms(unsigned long ms){

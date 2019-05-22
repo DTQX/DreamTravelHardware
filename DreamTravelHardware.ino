@@ -12,6 +12,7 @@
 #include "my_log.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
+#include "Wire.h"
 
 #include "mpu6050.h"
 // 开启调试
@@ -73,6 +74,10 @@ void dmpDataReady() {
 // // ================================================================
 
 void setup() {
+    // 初始化Wire
+    Wire.begin();
+    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    
 
     // TODO 加入连接协议
 
@@ -128,7 +133,7 @@ void loop() {
         unselectMPU(mpuPins[i]);
 
         // 保证发送频率
-        // while( millis() - lastSendTime < intervalTime);
+        while( millis() - lastSendTime < intervalTime);
 
     }
 
