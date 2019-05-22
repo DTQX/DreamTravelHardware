@@ -1,7 +1,7 @@
 #include "my_i2cdev.h"
-// #include <Wire.h>
+#include <Wire.h>
 // #include <Arduino.h>
-#include "I2Cdev.h"
+// #include "I2Cdev.h"
 
 #ifdef __cplusplus 
 extern "C" {
@@ -19,11 +19,30 @@ uint16_t readTimeout = 1000;
  * @return Status of operation (0 = success)
  */
 uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
-    if(I2Cdev::writeBytes( devAddr,  regAddr,  length,  data)){
-        return 0;
-    }else{
-        return 1;
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.print("I2C (0x");
+        Serial.print(devAddr, HEX);
+        Serial.print(") writing ");
+        Serial.print(length, DEC);
+        Serial.print(" bytes to 0x");
+        Serial.print(regAddr, HEX);
+        Serial.print("...");
+    #endif
+    uint8_t status = 0;
+        Wire.beginTransmission(devAddr);
+        Wire.write((uint8_t) regAddr); // send address
+    for (uint8_t i = 0; i < length; i++) {
+        #ifdef I2CDEV_SERIAL_DEBUG
+            Serial.print(data[i], HEX);
+            if (i + 1 < length) Serial.print(" ");
+        #endif
+			Wire.write((uint8_t) data[i]);
     }
+        Wire.endTransmission();
+    #ifdef I2CDEV_SERIAL_DEBUG
+        Serial.println(". Done.");
+    #endif
+    return status == 0;
 }
 
 
