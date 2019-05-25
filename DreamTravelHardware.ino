@@ -12,9 +12,11 @@
 #include "my_log.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
-#include "Wire.h"
 
 #include "mpu6050.h"
+
+#include "Wire.h"
+
 // 开启调试
  #define DEBUG
 
@@ -257,7 +259,7 @@ void initDevice(){
 
         delay(20);
 
-        resultCode = my_mpu_init(innerResultCode);
+        resultCode = my_mpu_init();
         if(resultCode){
             DEBUG_PRINT(F("my_mpu_init resultCode: "));
             DEBUG_PRINT(resultCode);
