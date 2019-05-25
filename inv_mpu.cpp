@@ -657,7 +657,7 @@ int mpu_init()
     /* Wake up chip. */
     data[0] = 0x00;
     if (i2c_write(st.hw->addr, st.reg->pwr_mgmt_1, 1, data))
-        return -1;
+        return -2;
 
    st.chip_cfg.accel_half = 0;
 
@@ -694,15 +694,15 @@ int mpu_init()
     st.chip_cfg.dmp_sample_rate = 0;
 
     if (mpu_set_gyro_fsr(2000))
-        return -1;
+        return -3;
     if (mpu_set_accel_fsr(2))
-        return -1;
+        return -4;
     if (mpu_set_lpf(42))
-        return -1;
+        return -5;
     if (mpu_set_sample_rate(50))
-        return -1;
+        return -6;
     if (mpu_configure_fifo(0))
-        return -1;
+        return -7;
 
     // if (int_param)
     //     reg_int_cb(int_param);
@@ -714,7 +714,7 @@ int mpu_init()
 #else
     /* Already disabled by setup_compass. */
     if (mpu_set_bypass(0))
-        return -1;
+        return -8;
 #endif
 
     mpu_set_sensors(0);
@@ -3247,3 +3247,46 @@ lp_int_restore:
  *  @}
  */
 
+/**
+ *  @brief      读取最新的dmp数据
+ *  This function should be used if the packet is to be parsed elsewhere.
+ *  @param[in]  length  Length of one FIFO packet.
+ *  @param[in]  data    FIFO packet.
+ */
+int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
+    unsigned char tmp[2];
+    unsigned short fifo_count;
+    if (!st.chip_cfg.dmp_on)
+        return -1;
+    if (!st.chip_cfg.sensors)
+        return -2;
+
+    if (i2c_read(st.hw->addr, st.reg->fifo_count_h, 2, tmp))
+        return -3;
+    fifo_count = (tmp[0] << 8) | tmp[1];
+    if (fifo_count < length) {
+        // more[0] = 0;
+        return -4;
+    }
+    if (fifo_count > (st.hw->max_fifo >> 1)) {
+        /* FIFO is 50% full, better check overflow bit. */
+        if (i2c_read(st.hw->addr, st.reg->int_status, 1, tmp))
+            return -5;
+        if (tmp[0] & BIT_FIFO_OVERFLOW) {
+            mpu_reset_fifo();
+            return -6;
+        }
+    }
+
+    while (fifo_count >= length)
+    {
+        if (i2c_read(st.hw->addr, st.reg->fifo_r_w, length, data)){
+            return -7;
+        }
+        fifo_count -= length;
+    }
+    
+    
+    // more[0] = fifo_count / length - 1;
+    return 0;
+}

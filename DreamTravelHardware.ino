@@ -144,8 +144,8 @@ void loop() {
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
-    int readResult = 1;
-    // int readResult = mpu_read_latest_fifo(fifoBuffer);
+    // int readResult = 1;
+    int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     
     if(readResult){
 
@@ -330,7 +330,7 @@ void initDevice(){
         int result = mpu_init();
 
         if(result){
-            Serial.print(F("my_mpu_init result: "));
+            Serial.print(F("mpu_init result: "));
             Serial.println(result);
             dmpReady = false;
             return;

@@ -1344,3 +1344,10 @@ int dmp_register_android_orient_cb(void (*func)(unsigned char))
  *  @}
  */
 
+/**
+ * 获取dmp包长
+ */
+unsigned char dmp_get_packet_length(){
+    return dmp.packet_length;
+}
+
