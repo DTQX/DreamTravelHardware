@@ -1324,6 +1324,11 @@ int dmp_register_tap_cb(void (*func)(unsigned char, unsigned char))
     return 0;
 }
 
+static void android_orient_cb(unsigned char orientation)
+{
+}
+
+
 /**
  *  @brief      Register a function to be executed on a android orientation event.
  *  @param[in]  func    Callback function.
