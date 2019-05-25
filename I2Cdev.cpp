@@ -225,6 +225,9 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
     #if (I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_SBWIRE)
 
         #if (ARDUINO < 100)
+        Serial.print("i2cdev ARDUINO < 100, I2CDEV_IMPLEMENTATION");
+        Serial.println("i2cdev ARDUINO < 100, I2CDEV_IMPLEMENTATION");
+
             // Arduino v00xx (before v1.0), Wire library
 
             // I2C/TWI subsystem uses internal buffer that breaks with large data requests
@@ -248,6 +251,8 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
                 Wire.endTransmission();
             }
         #elif (ARDUINO == 100)
+        Serial.println("i2cdev ARDUINO = 100");
+
             // Arduino v1.0.0, Wire library
             // Adds standardized write() and read() stream methods instead of send() and receive()
 
@@ -272,6 +277,9 @@ int8_t I2Cdev::readBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8
                 Wire.endTransmission();
             }
         #elif (ARDUINO > 100)
+        Serial.print("i2cdev ARDUINO > 100, I2CDEV_IMPLEMENTATION");
+        Serial.println(I2CDEV_IMPLEMENTATION);
+
             // Arduino v1.0.1+, Wire library
             // Adds official support for repeated start condition, yay!
 
@@ -345,6 +353,8 @@ int8_t I2Cdev::readWords(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint1
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE || I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_SBWIRE
 
         #if (ARDUINO < 100)
+        Serial.println("i2cdev ARDUINO < 100");
+
             // Arduino v00xx (before v1.0), Wire library
 
             // I2C/TWI subsystem uses internal buffer that breaks with large data requests
@@ -1352,6 +1362,7 @@ uint16_t I2Cdev::readTimeout = I2CDEV_DEFAULT_READ_TIMEOUT;
     }
     
     void TwoWire::beginTransmission(uint8_t address) {
+        Serial.println("i2cdev beginTransmission");
         //beginTransmission((uint8_t)address);
 
         // indicate that we are transmitting
