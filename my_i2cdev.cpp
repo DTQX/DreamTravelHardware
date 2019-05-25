@@ -3,9 +3,9 @@
 #include <Arduino.h>
 // #include "I2Cdev.h"
 
-#ifdef __cplusplus 
-extern "C" {
-#endif
+// #ifdef __cplusplus 
+// extern "C" {
+// #endif
 uint16_t readTimeout = 1000;
 
 //  #define I2CDEV_SERIAL_DEBUG
@@ -18,7 +18,7 @@ uint16_t readTimeout = 1000;
  * @param data Buffer to copy new data from
  * @return Status of operation (0 = success)
  */
-uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
+uint8_t i2c_write(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
         Serial.print(devAddr, HEX);
@@ -58,7 +58,7 @@ uint8_t writeBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *
  * @param readTimeout Optional read readTimeout in milliseconds (0 to disable, leave off to use default class value in I2Cdev::readTimeout)
  * @return 0 success
  */
-int8_t readBytes_c(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
+int8_t i2c_read(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data) {
     
     #ifdef I2CDEV_SERIAL_DEBUG
         Serial.print("I2C (0x");
@@ -152,6 +152,6 @@ int get_ms(unsigned long *timestamp){
     return 0;
 }
 
-#ifdef __cplusplus 
-}
-#endif
+// #ifdef __cplusplus 
+// }
+// #endif

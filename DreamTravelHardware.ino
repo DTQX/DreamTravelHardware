@@ -7,13 +7,13 @@
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 // #include "I2Cdev.h"
-
-// #include "MPU6050.h" 
 #include "my_log.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
 
-#include "mpu6050.h"
+// #include "mpu6050.h"
+#include "inv_mpu.h"
+#include "inv_mpu_dmp_motion_driver.h"
 
 #include "Wire.h"
 
@@ -144,8 +144,8 @@ void loop() {
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
-
-    int readResult = mpu_read_latest_fifo(fifoBuffer);
+    int readResult = 1;
+    // int readResult = mpu_read_latest_fifo(fifoBuffer);
     
     if(readResult){
 
@@ -259,18 +259,18 @@ void initDevice(){
 
         delay(20);
 
-        resultCode = my_mpu_init();
-        if(resultCode){
-            DEBUG_PRINT(F("my_mpu_init resultCode: "));
-            DEBUG_PRINT(resultCode);
-            DEBUG_PRINT("  ");
-            DEBUG_PRINT(" innerResultCode 0: ");
-            DEBUG_PRINT(innerResultCode[0]);
-            DEBUG_PRINT("  ");
-            DEBUG_PRINT(" innerResultCode 1: ");
-            DEBUG_PRINTLN(innerResultCode[1]);
-            dmpReady = false;
-        }
+        // resultCode = my_mpu_init();
+        // if(resultCode){
+        //     DEBUG_PRINT(F("my_mpu_init resultCode: "));
+        //     DEBUG_PRINT(resultCode);
+        //     DEBUG_PRINT("  ");
+        //     DEBUG_PRINT(" innerResultCode 0: ");
+        //     DEBUG_PRINT(innerResultCode[0]);
+        //     DEBUG_PRINT("  ");
+        //     DEBUG_PRINT(" innerResultCode 1: ");
+        //     DEBUG_PRINTLN(innerResultCode[1]);
+        //     dmpReady = false;
+        // }
         
         // 取消选中mpu
         unselectMPU(mpuPins[i]); 
