@@ -1848,6 +1848,10 @@ int mpu_set_bypass(unsigned char bypass_on)
         if (i2c_write(st.hw->addr, st.reg->user_ctrl, 1, &tmp))
             return -1;
         delay_ms(3);
+        tmp |= 0x01;
+        if (i2c_write(st.hw->addr, st.reg->user_ctrl, 1, &tmp))
+            return -1;
+        delay_ms(20);
         if (st.chip_cfg.active_low_int)
             tmp = BIT_ACTL;
         else
@@ -2901,12 +2905,12 @@ int mpu_set_dmp_state(unsigned char enable)
         if(result){
             return -1;
         }
-        /* Disable bypass mode. */
+        // /* Disable bypass mode. */
         
-        result = mpu_set_bypass(0);
-        if(result){
-            return -1;
-        }
+        // result = mpu_set_bypass(0);
+        // if(result){
+        //     return -1;
+        // }
         /* Keep constant sample rate, FIFO rate controlled by DMP. */
         
         result = mpu_set_sample_rate(st.chip_cfg.dmp_sample_rate);
