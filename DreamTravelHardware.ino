@@ -196,14 +196,20 @@ void sendOneData(int index){
             ((long)lastPacket[index][10] << 8) | lastPacket[index][11];
         quat[3] = ((long)lastPacket[index][12] << 24) | ((long)lastPacket[index][13] << 16) |
             ((long)lastPacket[index][14] << 8) | lastPacket[index][15];
-        Serial.print(quat[0] / QUAT_SENS);
-        Serial.print("  ");
-        Serial.print(quat[1] / QUAT_SENS);
-        Serial.print("  ");
-        Serial.print(quat[2] / QUAT_SENS);
-        Serial.print("  ");
-        Serial.print(quat[3] / QUAT_SENS);
-        Serial.print("  ");
+        q.w = quat[0] / QUAT_SENS;
+        q.x = quat[1] / QUAT_SENS;
+        q.y = quat[2] / QUAT_SENS;
+        q.z = quat[3] / QUAT_SENS;
+        dmpGetEuler(euler, q);
+
+        // Serial.print(quat[0] / QUAT_SENS);
+        // Serial.print("  ");
+        // Serial.print(quat[1] / QUAT_SENS);
+        // Serial.print("  ");
+        // Serial.print(quat[2] / QUAT_SENS);
+        // Serial.print("  ");
+        // Serial.print(quat[3] / QUAT_SENS);
+        // Serial.print("  ");
     // }
     #else
     for(int j = 0; j < MPU_DATA_SIZE; j++){
@@ -252,6 +258,13 @@ void initMpuPins(){
     }
 }
 
+
+uint8_t dmpGetEuler(float *data, Quaternion *q) {
+    data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
+    data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
+    data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
+    return 0;
+}
 
 static void tap_cb(unsigned char direction, unsigned char count)
 {
