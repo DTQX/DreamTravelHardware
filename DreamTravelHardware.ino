@@ -200,8 +200,14 @@ void sendOneData(int index){
         q.x = quat[1] / QUAT_SENS;
         q.y = quat[2] / QUAT_SENS;
         q.z = quat[3] / QUAT_SENS;
-        dmpGetEuler(euler, q);
-
+        dmpGetEuler(euler, &q);
+        Serial.print(euler[0]);
+        Serial.print("  ");
+        Serial.print(euler[1]);
+        Serial.print("  ");
+        Serial.print(euler[2]);
+        Serial.print("  ");
+        
         // Serial.print(quat[0] / QUAT_SENS);
         // Serial.print("  ");
         // Serial.print(quat[1] / QUAT_SENS);
