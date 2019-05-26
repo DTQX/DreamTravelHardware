@@ -1,4 +1,4 @@
-
+ 
 /** mpu采样率 60Hz;  arduino数据发送频率 33.33Hz
  *
  *  
@@ -118,14 +118,14 @@ void loop() {
 
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
-        lastSendTime = millis();
+        // lastSendTime = millis();
 
         // 选中mpu
         selectMPU(mpuPins[i]);
        
         // 更新lastPacket
         updateOneLastPacket(i);
-        delay(15);
+        // delay(15);
         // Serial.print("----------------");
 
         // 发送一个 mpu 的数据
@@ -135,7 +135,7 @@ void loop() {
         unselectMPU(mpuPins[i]);
 
         // 保证发送频率
-        while( millis() - lastSendTime < intervalTime);
+        // while( millis() - lastSendTime < intervalTime);
 
     }
 
@@ -145,11 +145,15 @@ void loop() {
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
     // int readResult = 1;
-    int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    unsigned char more[1];
+    // int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    Serial.print("-----");
+    Serial.println(millis());
+    int readResult = mpu_read_fifo_stream(dmp_get_packet_length(), fifoBuffer, more);;
     
     if(readResult){
 
-        DEBUG_PRINT("mpu_read_latest_fifo error result: ");
+        DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
         DEBUG_PRINTLN(readResult);
         return -1;
     }
@@ -321,34 +325,70 @@ void initDevice(){
     Serial.println(F("Initializing I2C devices..."));
     int innerResultCode[2] = {0,0};
     int resultCode;
-    for(int i = 0; i< MPU_NUM; i++){
+    dmp_init_struct();
+    mpu_init_struct();
+    // for(int i = 0; i< MPU_NUM; i++){
         // 选中mpu
-         selectMPU(mpuPins[i]);
+        //  selectMPU(mpuPins[i]);
 
-        delay(20);
+        // delay(20);
 
         int result = mpu_init();
 
         if(result){
-            Serial.print(F("mpu_init result: "));
+            Serial.print(F("mpu_init error!"));
             Serial.println(result);
             dmpReady = false;
             return;
         }
 
+        mpu_set_bypass(1);
+
         /* Get/set hardware configuration. Start gyro. */
         /* Wake up all sensors. */
-        mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL);
+        if(mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
+            Serial.print(F("mpu_set_sensors error"));
+            dmpReady = false;
+            return;
+        }
         /* Push both gyro and accel data into the FIFO. */
-        mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL);
-        mpu_set_sample_rate(100);
+        if(mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
+            Serial.print(F("mpu_configure_fifo error"));
+            dmpReady = false;
+            return;
+        }
+        if(mpu_set_sample_rate(100)){
+            Serial.print(F("mpu_set_sample_rate error"));
+            dmpReady = false;
+            return;
+        }
+        
+        
         /* Read back configuration in case it was set improperly. */
         unsigned char accel_fsr;
         unsigned short gyro_rate, gyro_fsr;
         unsigned long timestamp;
-        mpu_get_sample_rate(&gyro_rate);
-        mpu_get_gyro_fsr(&gyro_fsr);
-        mpu_get_accel_fsr(&accel_fsr);
+        if(mpu_get_sample_rate(&gyro_rate)){
+            Serial.print(F("mpu_get_sample_rate error"));
+            dmpReady = false;
+            return;
+        }
+        
+        ;
+        if(mpu_get_gyro_fsr(&gyro_fsr)){
+            Serial.print(F("mpu_get_gyro_fsr error"));
+            dmpReady = false;
+            return;
+        }
+        
+        ;
+        if(mpu_get_accel_fsr(&accel_fsr)){
+            Serial.print(F("mpu_get_accel_fsr error"));
+            dmpReady = false;
+            return;
+        }
+        
+        ;
 
         /* Initialize HAL state variables. */
         // memset(&hal, 0, sizeof(hal));
@@ -385,11 +425,37 @@ void initDevice(){
      * DMP_FEATURE_SEND_CAL_GYRO: Add calibrated gyro data to the FIFO. Cannot
      * be used in combination with DMP_FEATURE_SEND_RAW_GYRO.
      */
-    dmp_load_motion_driver_firmware();
-    dmp_set_orientation(
-        inv_orientation_matrix_to_scalar(gyro_orientation));
-    dmp_register_tap_cb(tap_cb);
-    dmp_register_android_orient_cb(android_orient_cb);
+    result = dmp_load_motion_driver_firmware();
+    if(result){
+            Serial.print(F("dmp_load_motion_driver_firmware error :"));
+            Serial.println(result);
+            dmpReady = false;
+            return;
+        }
+        
+    ;
+    if(dmp_set_orientation(
+        inv_orientation_matrix_to_scalar(gyro_orientation))){
+        Serial.print(F("dmp_set_orientation error"));
+        dmpReady = false;
+        return;
+    }
+        
+    
+    if(dmp_register_tap_cb(tap_cb)){
+        Serial.print(F("dmp_register_tap_cb error"));
+        dmpReady = false;
+        return;
+    }
+        
+    ;
+    if(dmp_register_android_orient_cb(android_orient_cb)){
+            Serial.print(F("dmp_register_android_orient_cb error"));
+        dmpReady = false;
+        return;
+    }
+        
+    ;
     /*
      * Known Bug -
      * DMP when enabled will sample sensor data at 200Hz and output to FIFO at the rate
@@ -401,14 +467,32 @@ void initDevice(){
      * then the interrupts will be at 200Hz even if fifo rate
      * is set at a different rate. To avoid this issue include the DMP_FEATURE_TAP
      */
-    dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
         DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-        DMP_FEATURE_GYRO_CAL);
-    dmp_set_fifo_rate(100);
-    mpu_set_dmp_state(1);
+        DMP_FEATURE_GYRO_CAL)){
+        Serial.print(F("dmp_enable_feature error"));
+        dmpReady = false;
+        return;
+    }
+    
+    
+    if(dmp_set_fifo_rate(100)){
+            Serial.print(F("dmp_set_fifo_rate error"));
+        dmpReady = false;
+        return;
+    }
+        
+    ;
+    if(mpu_set_dmp_state(1)){
+            Serial.print(F("mpu_set_dmp_state error"));
+        dmpReady = false;
+        return;
+    }
+        
+    ;
 
 
         // 取消选中mpu
-        unselectMPU(mpuPins[i]); 
-    }
+    //     unselectMPU(mpuPins[i]); 
+    // }
 }

@@ -49,6 +49,8 @@
 
 #define INV_WXYZ_QUAT       (0x100)
 
+int dmp_init_struct();
+
 /* Set up functions. */
 int dmp_load_motion_driver_firmware(void);
 int dmp_set_fifo_rate(unsigned short rate);

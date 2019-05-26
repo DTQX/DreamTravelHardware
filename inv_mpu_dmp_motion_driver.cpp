@@ -456,14 +456,16 @@ struct dmp_s {
     unsigned char packet_length;
 };
 
-static struct dmp_s dmp = {
-    .tap_cb = NULL,
-    .android_orient_cb = NULL,
-    .orient = 0,
-    .feature_mask = 0,
-    .fifo_rate = 0,
-    .packet_length = 0
-};
+static struct dmp_s dmp;
+
+int dmp_init_struct(){
+    dmp.tap_cb = NULL;
+    dmp.android_orient_cb = NULL;
+    dmp.orient = 0;
+    dmp.feature_mask = 0;
+    dmp.fifo_rate = 0;
+    dmp.packet_length = 0;
+}
 
 /**
  *  @brief  Load the DMP with this image.
@@ -966,7 +968,12 @@ int dmp_enable_feature(unsigned short mask)
     tmp[1] = (unsigned char)((GYRO_SF >> 16) & 0xFF);
     tmp[2] = (unsigned char)((GYRO_SF >> 8) & 0xFF);
     tmp[3] = (unsigned char)(GYRO_SF & 0xFF);
-    mpu_write_mem(D_0_104, 4, tmp);
+    int result;
+    result = mpu_write_mem(D_0_104, 4, tmp);
+    if(result){
+        return -1;
+    }
+    
 
     /* Send sensor data to the FIFO. */
     tmp[0] = 0xA3;
@@ -991,19 +998,42 @@ int dmp_enable_feature(unsigned short mask)
     tmp[7] = 0xA3;
     tmp[8] = 0xA3;
     tmp[9] = 0xA3;
-    mpu_write_mem(CFG_15,10,tmp);
+    result = mpu_write_mem(CFG_15,10,tmp);
+    if(result){
+        return -2;
+    }
+    
+    
 
     /* Send gesture data to the FIFO. */
     if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
         tmp[0] = DINA20;
     else
         tmp[0] = 0xD8;
-    mpu_write_mem(CFG_27,1,tmp);
+    
+    result = mpu_write_mem(CFG_27,1,tmp);
+    if(result){
+        return -3;
+    }
+    
+    
 
-    if (mask & DMP_FEATURE_GYRO_CAL)
-        dmp_enable_gyro_cal(1);
-    else
-        dmp_enable_gyro_cal(0);
+    if (mask & DMP_FEATURE_GYRO_CAL){
+        result = dmp_enable_gyro_cal(1);
+        if(result){
+            return -4;
+        }
+    
+    }
+        
+    else{
+        result = dmp_enable_gyro_cal(0);
+        if(result){
+            return -5;
+        }
+    
+    }
+        
 
     if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
         if (mask & DMP_FEATURE_SEND_CAL_GYRO) {
@@ -1017,46 +1047,136 @@ int dmp_enable_feature(unsigned short mask)
             tmp[2] = DINAC2;
             tmp[3] = DINA90;
         }
-        mpu_write_mem(CFG_GYRO_RAW_DATA, 4, tmp);
+        result = mpu_write_mem(CFG_GYRO_RAW_DATA, 4, tmp);
+        if(result){
+            return -6;
+        }
+    
+        
     }
 
     if (mask & DMP_FEATURE_TAP) {
         /* Enable tap. */
         tmp[0] = 0xF8;
-        mpu_write_mem(CFG_20, 1, tmp);
-        dmp_set_tap_thresh(TAP_XYZ, 250);
-        dmp_set_tap_axes(TAP_XYZ);
-        dmp_set_tap_count(1);
-        dmp_set_tap_time(100);
-        dmp_set_tap_time_multi(500);
+        result = mpu_write_mem(CFG_20, 1, tmp);
+        if(result){
+            return -7;
+        }
+    
+        
+        result = dmp_set_tap_thresh(TAP_XYZ, 250);
+        if(result){
+            return -8;
+        }
+    
+        
+        result = dmp_set_tap_axes(TAP_XYZ);
+        if(result){
+            return -9;
+        }
+    
+        
+        result = dmp_set_tap_count(1);
+        if(result){
+            return -10;
+        }
+    
+        
+        result = dmp_set_tap_time(100);
+        if(result){
+            return -11;
+        }
+    
+        
+        result = dmp_set_tap_time_multi(500);
+        if(result){
+            return -12;
+        }
+    
+        
+        result = dmp_set_shake_reject_thresh(GYRO_SF, 200);
+        if(result){
+            return -13;
+        }
+    
 
-        dmp_set_shake_reject_thresh(GYRO_SF, 200);
-        dmp_set_shake_reject_time(40);
-        dmp_set_shake_reject_timeout(10);
+        
+        result = dmp_set_shake_reject_time(40);
+        if(result){
+            return -14;
+        }
+    
+        
+        result = dmp_set_shake_reject_timeout(10);
+        if(result){
+            return -15;
+        }
+    
+        
     } else {
         tmp[0] = 0xD8;
-        mpu_write_mem(CFG_20, 1, tmp);
+        result = mpu_write_mem(CFG_20, 1, tmp);
+        if(result){
+            return -16;
+        }
+    
+        
     }
 
     if (mask & DMP_FEATURE_ANDROID_ORIENT) {
         tmp[0] = 0xD9;
     } else
         tmp[0] = 0xD8;
-    mpu_write_mem(CFG_ANDROID_ORIENT_INT, 1, tmp);
 
-    if (mask & DMP_FEATURE_LP_QUAT)
-        dmp_enable_lp_quat(1);
-    else
-        dmp_enable_lp_quat(0);
+    result = mpu_write_mem(CFG_ANDROID_ORIENT_INT, 1, tmp);
+    if(result){
+        return -17;
+    }
+    
+    
 
-    if (mask & DMP_FEATURE_6X_LP_QUAT)
-        dmp_enable_6x_lp_quat(1);
-    else
-        dmp_enable_6x_lp_quat(0);
+    if (mask & DMP_FEATURE_LP_QUAT){
+        result = dmp_enable_lp_quat(1);
+        if(result){
+            return -18;
+        }
+    
+    }
+        
+    else{
+        result = dmp_enable_lp_quat(0);
+        if(result){
+            return -19;
+        }
+    
+    }
+        
+
+    if (mask & DMP_FEATURE_6X_LP_QUAT){
+        result = dmp_enable_6x_lp_quat(1);
+        if(result){
+            return -20;
+        }
+    
+    }
+        
+    else{
+        result = dmp_enable_6x_lp_quat(0);
+        if(result){
+            return -21;
+        }
+        
+    }
+        
 
     /* Pedometer is always enabled. */
     dmp.feature_mask = mask | DMP_FEATURE_PEDOMETER;
-    mpu_reset_fifo();
+    result = mpu_reset_fifo();
+    if(result){
+        return -22;
+    }
+    
+    
 
     dmp.packet_length = 0;
     if (mask & DMP_FEATURE_SEND_RAW_ACCEL)
@@ -1121,7 +1241,10 @@ int dmp_enable_lp_quat(unsigned char enable)
     else
         memset(regs, 0x8B, 4);
 
-    mpu_write_mem(CFG_LP_QUAT, 4, regs);
+    if(mpu_write_mem(CFG_LP_QUAT, 4, regs)){
+        return -1;
+    }
+    
 
     return mpu_reset_fifo();
 }
@@ -1144,7 +1267,10 @@ int dmp_enable_6x_lp_quat(unsigned char enable)
     } else
         memset(regs, 0xA3, 4);
 
-    mpu_write_mem(CFG_8, 4, regs);
+    if(mpu_write_mem(CFG_8, 4, regs)){
+        return -1;
+    }
+    
 
     return mpu_reset_fifo();
 }

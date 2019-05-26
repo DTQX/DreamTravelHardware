@@ -505,7 +505,7 @@ static int setup_compass(void);
 #define MAX_COMPASS_SAMPLE_RATE (100)
 #endif
 
-int init_struct(){
+int mpu_init_struct(){
      reg.who_am_i       = 0x75;
     reg.rate_div       = 0x19;
     reg.lpf            = 0x1A;
@@ -717,7 +717,9 @@ int mpu_init()
         return -8;
 #endif
 
-    mpu_set_sensors(0);
+    if(mpu_set_sensors(0)){
+        return -9;
+    }
     return 0;
 }
 
@@ -1358,18 +1360,22 @@ int mpu_set_sample_rate(unsigned short rate)
         return -1;
 
     if (st.chip_cfg.dmp_on)
-        return -1;
+        return -2;
     else {
         if (st.chip_cfg.lp_accel_mode) {
             if (rate && (rate <= 40)) {
                 /* Just stay in low-power accel mode. */
-                mpu_lp_accel_mode(rate);
+                if(mpu_lp_accel_mode(rate)){
+                    return -5;
+                }
                 return 0;
             }
             /* Requested rate exceeds the allowed frequencies in LP accel mode,
              * switch back to full-power mode.
              */
-            mpu_lp_accel_mode(0);
+            if(mpu_lp_accel_mode(0)){
+                return -6;
+            }
         }
         if (rate < 4)
             rate = 4;
@@ -1378,7 +1384,7 @@ int mpu_set_sample_rate(unsigned short rate)
 
         data = 1000 / rate - 1;
         if (i2c_write(st.hw->addr, st.reg->rate_div, 1, &data))
-            return -1;
+            return -3;
 
         st.chip_cfg.sample_rate = 1000 / (1 + data);
 
@@ -1387,7 +1393,9 @@ int mpu_set_sample_rate(unsigned short rate)
 #endif
 
         /* Automatically set LPF to 1/2 sampling rate. */
-        mpu_set_lpf(st.chip_cfg.sample_rate >> 1);
+        if(mpu_set_lpf(st.chip_cfg.sample_rate >> 1)){
+            return -4;
+        }
         return 0;
     }
 }
@@ -1536,10 +1544,15 @@ int mpu_configure_fifo(unsigned char sensors)
             result = -1;
         else
             result = 0;
-        if (sensors || st.chip_cfg.lp_accel_mode)
-            set_int_enable(1);
-        else
-            set_int_enable(0);
+        if (sensors || st.chip_cfg.lp_accel_mode){
+            if(set_int_enable(1)){
+                return -3;
+            }
+        }else{
+            if(set_int_enable(0)){
+                return -4;
+            }
+        }
         if (sensors) {
             if (mpu_reset_fifo()) {
                 st.chip_cfg.fifo_enable = prev;
@@ -1608,9 +1621,12 @@ int mpu_set_sensors(unsigned char sensors)
         return -1;
     }
 
-    if (sensors && (sensors != INV_XYZ_ACCEL))
+    if (sensors && (sensors != INV_XYZ_ACCEL)){
         /* Latched interrupts only used in LP accel mode. */
-        mpu_set_int_latched(0);
+        if(mpu_set_int_latched(0)){
+            return -2;
+        }
+    }
 
 #ifdef AK89xx_SECONDARY
 #ifdef AK89xx_BYPASS
@@ -2738,19 +2754,36 @@ int mpu_write_mem(unsigned short mem_addr, unsigned short length,
     if (!data)
         return -1;
     if (!st.chip_cfg.sensors)
-        return -1;
+        return -2;
 
     tmp[0] = (unsigned char)(mem_addr >> 8);
     tmp[1] = (unsigned char)(mem_addr & 0xFF);
 
     /* Check bank boundaries. */
-    if (tmp[1] + length > st.hw->bank_size)
-        return -1;
+    if (tmp[1] + length > st.hw->bank_size){
+        Serial.print("tmp[1] :");
+        Serial.println(tmp[1]);
+        Serial.print("length :");
+        Serial.println(length);
+        Serial.print("st.hw->bank_size :");
+        Serial.println(st.hw->bank_size);
+        return -3;
 
-    if (i2c_write(st.hw->addr, st.reg->bank_sel, 2, tmp))
-        return -1;
-    if (i2c_write(st.hw->addr, st.reg->mem_r_w, length, data))
-        return -1;
+    }
+    int result = 0;
+    result = i2c_write(st.hw->addr, st.reg->bank_sel, 2, tmp);
+    if (result){
+        Serial.print("i2c_write :");
+        Serial.println(result);
+        return -4;
+    }
+    
+    result = i2c_write(st.hw->addr, st.reg->mem_r_w, length, data);
+    if (result){
+        Serial.print("i2c_write :");
+        Serial.println(result);
+        return -5;
+    }
     return 0;
 }
 
@@ -2771,19 +2804,27 @@ int mpu_read_mem(unsigned short mem_addr, unsigned short length,
     if (!data)
         return -1;
     if (!st.chip_cfg.sensors)
-        return -1;
+        return -2;
 
     tmp[0] = (unsigned char)(mem_addr >> 8);
     tmp[1] = (unsigned char)(mem_addr & 0xFF);
 
     /* Check bank boundaries. */
-    if (tmp[1] + length > st.hw->bank_size)
-        return -1;
+    if (tmp[1] + length > st.hw->bank_size){
+        Serial.print("tmp[1] :");
+        Serial.println(tmp[1]);
+        Serial.print("length :");
+        Serial.println(length);
+        Serial.print("st.hw->bank_size :");
+        Serial.println(st.hw->bank_size);
+        return -3;
+
+    }
 
     if (i2c_write(st.hw->addr, st.reg->bank_sel, 2, tmp))
-        return -1;
+        return -4;
     if (i2c_read(st.hw->addr, st.reg->mem_r_w, length, data))
-        return -1;
+        return -5;
     return 0;
 }
 
@@ -2809,22 +2850,31 @@ int mpu_load_firmware(unsigned short length, const unsigned char *firmware,
         return -1;
 
     if (!firmware)
-        return -1;
+        return -2;
+    int result = 0;
     for (ii = 0; ii < length; ii += this_write) {
         this_write = min(LOAD_CHUNK, length - ii);
-        if (mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]))
-            return -1;
-        if (mpu_read_mem(ii, this_write, cur))
-            return -1;
+        result = mpu_write_mem(ii, this_write, (unsigned char*)&firmware[ii]);
+        if (result){
+            Serial.print("mpu_write_mem error:");
+            Serial.println(result);
+            return -3;
+        }
+        result = mpu_read_mem(ii, this_write, cur);
+        if (result){
+            Serial.print("mpu_read_mem error:");
+            Serial.println(result);
+            return -4;
+        }
         if (memcmp(firmware+ii, cur, this_write))
-            return -2;
+            return -5;
     }
 
     /* Set program start address. */
     tmp[0] = start_addr >> 8;
     tmp[1] = start_addr & 0xFF;
     if (i2c_write(st.hw->addr, st.reg->prgm_start_h, 2, tmp))
-        return -1;
+        return -6;
 
     st.chip_cfg.dmp_loaded = 1;
     st.chip_cfg.dmp_sample_rate = sample_rate;
@@ -2842,30 +2892,66 @@ int mpu_set_dmp_state(unsigned char enable)
     if (st.chip_cfg.dmp_on == enable)
         return 0;
 
+    int result = 0;
     if (enable) {
         if (!st.chip_cfg.dmp_loaded)
             return -1;
         /* Disable data ready interrupt. */
-        set_int_enable(0);
+        result = set_int_enable(0);
+        if(result){
+            return -1;
+        }
         /* Disable bypass mode. */
-        mpu_set_bypass(0);
+        
+        result = mpu_set_bypass(0);
+        if(result){
+            return -1;
+        }
         /* Keep constant sample rate, FIFO rate controlled by DMP. */
-        mpu_set_sample_rate(st.chip_cfg.dmp_sample_rate);
+        
+        result = mpu_set_sample_rate(st.chip_cfg.dmp_sample_rate);
+        if(result){
+            return -1;
+        }
         /* Remove FIFO elements. */
         tmp = 0;
-        i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        
+        result = i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        if(result){
+            return -1;
+        }
         st.chip_cfg.dmp_on = 1;
         /* Enable DMP interrupt. */
-        set_int_enable(1);
-        mpu_reset_fifo();
+        
+        result = set_int_enable(1);
+        if(result){
+            return -1;
+        }
+        
+        result = mpu_reset_fifo();
+        if(result){
+            return -1;
+        }
     } else {
         /* Disable DMP interrupt. */
-        set_int_enable(0);
+        
+        result = set_int_enable(0);
+        if(result){
+            return -1;
+        }
         /* Restore FIFO settings. */
         tmp = st.chip_cfg.fifo_enable;
-        i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        
+        result = i2c_write(st.hw->addr, 0x23, 1, &tmp);
+        if(result){
+            return -1;
+        }
         st.chip_cfg.dmp_on = 0;
-        mpu_reset_fifo();
+        
+        result = mpu_reset_fifo();
+        if(result){
+            return -1;
+        }
     }
     return 0;
 }
@@ -3265,6 +3351,10 @@ int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
         return -3;
     fifo_count = (tmp[0] << 8) | tmp[1];
     if (fifo_count < length) {
+        Serial.print("fifo_count:");
+        Serial.println(fifo_count);
+        Serial.print("length:");
+        Serial.println(length);
         // more[0] = 0;
         return -4;
     }
