@@ -157,6 +157,49 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(readResult);
         return -1;
     }
+        long quat[4];
+        quat[0] = ((long)fifoBuffer[0] << 24) | ((long)fifoBuffer[1] << 16) |
+            ((long)fifoBuffer[2] << 8) | fifoBuffer[3];
+        quat[1] = ((long)fifoBuffer[4] << 24) | ((long)fifoBuffer[5] << 16) |
+            ((long)fifoBuffer[6] << 8) | fifoBuffer[7];
+        quat[2] = ((long)fifoBuffer[8] << 24) | ((long)fifoBuffer[9] << 16) |
+            ((long)fifoBuffer[10] << 8) | fifoBuffer[11];
+        quat[3] = ((long)fifoBuffer[12] << 24) | ((long)fifoBuffer[13] << 16) |
+            ((long)fifoBuffer[14] << 8) | fifoBuffer[15];
+        q.w = quat[0] / QUAT_SENS;
+        q.x = quat[1] / QUAT_SENS;
+        q.y = quat[2] / QUAT_SENS;
+        q.z = quat[3] / QUAT_SENS;
+        dmpGetEuler(euler, &q);
+
+        Serial.print("euler\t");
+        Serial.print(euler[0] * 180/M_PI);
+        Serial.print("\t");
+        Serial.print(euler[1] * 180/M_PI);
+        Serial.print("\t");
+        Serial.println(euler[2] * 180/M_PI);
+
+        // Serial.print("Quat :");
+        
+        // Serial.print(q.x);
+        // Serial.print("  ");
+        // Serial.print(q.y);
+        // Serial.print("  ");
+        // Serial.print(q.y);
+        // Serial.print("  ");
+        // Serial.print(q.y);
+        // Serial.print("  ");
+
+        // Serial.print("origin Quat :");
+        
+        // Serial.print(quat[0] );
+        // Serial.print("  ");
+        // Serial.print(quat[1]);
+        // Serial.print("  ");
+        // Serial.print(quat[2] );
+        // Serial.print("  ");
+        // Serial.print(quat[3] );
+        // Serial.print("  ");
     
     // memcpy(lastPacket[index], fifoBuffer, 16 * sizeof(uint8_t));
 
@@ -187,26 +230,28 @@ void sendOneData(int index){
     // for(int j = 0; j < MPU_DATA_SIZE; j++){
         // Serial.print(lastPacket[index][j],HEX);
 
-        long quat[4];
-        quat[0] = ((long)lastPacket[index][0] << 24) | ((long)lastPacket[index][1] << 16) |
-            ((long)lastPacket[index][2] << 8) | lastPacket[index][3];
-        quat[1] = ((long)lastPacket[index][4] << 24) | ((long)lastPacket[index][5] << 16) |
-            ((long)lastPacket[index][6] << 8) | lastPacket[index][7];
-        quat[2] = ((long)lastPacket[index][8] << 24) | ((long)lastPacket[index][9] << 16) |
-            ((long)lastPacket[index][10] << 8) | lastPacket[index][11];
-        quat[3] = ((long)lastPacket[index][12] << 24) | ((long)lastPacket[index][13] << 16) |
-            ((long)lastPacket[index][14] << 8) | lastPacket[index][15];
-        q.w = quat[0] / QUAT_SENS;
-        q.x = quat[1] / QUAT_SENS;
-        q.y = quat[2] / QUAT_SENS;
-        q.z = quat[3] / QUAT_SENS;
-        dmpGetEuler(euler, &q);
-        Serial.print(euler[0]);
-        Serial.print("  ");
-        Serial.print(euler[1]);
-        Serial.print("  ");
-        Serial.print(euler[2]);
-        Serial.print("  ");
+        // long quat[4];
+        // quat[0] = ((long)lastPacket[index][0] << 24) | ((long)lastPacket[index][1] << 16) |
+        //     ((long)lastPacket[index][2] << 8) | lastPacket[index][3];
+        // quat[1] = ((long)lastPacket[index][4] << 24) | ((long)lastPacket[index][5] << 16) |
+        //     ((long)lastPacket[index][6] << 8) | lastPacket[index][7];
+        // quat[2] = ((long)lastPacket[index][8] << 24) | ((long)lastPacket[index][9] << 16) |
+        //     ((long)lastPacket[index][10] << 8) | lastPacket[index][11];
+        // quat[3] = ((long)lastPacket[index][12] << 24) | ((long)lastPacket[index][13] << 16) |
+        //     ((long)lastPacket[index][14] << 8) | lastPacket[index][15];
+        // q.w = quat[0] / QUAT_SENS;
+        // q.x = quat[1] / QUAT_SENS;
+        // q.y = quat[2] / QUAT_SENS;
+        // q.z = quat[3] / QUAT_SENS;
+        // dmpGetEuler(euler, q);
+        // Serial.print("euler");
+        // Serial.print(euler[0]);
+        // Serial.print("  ");
+        // Serial.print(euler[1]);
+        // Serial.print("  ");
+        // Serial.println(euler[2]);
+
+        // Serial.print("Quat :");
         
         // Serial.print(quat[0] / QUAT_SENS);
         // Serial.print("  ");
@@ -215,6 +260,17 @@ void sendOneData(int index){
         // Serial.print(quat[2] / QUAT_SENS);
         // Serial.print("  ");
         // Serial.print(quat[3] / QUAT_SENS);
+        // Serial.print("  ");
+
+        // Serial.print("origin Quat :");
+        
+        // Serial.print(quat[0] );
+        // Serial.print("  ");
+        // Serial.print(quat[1]);
+        // Serial.print("  ");
+        // Serial.print(quat[2] );
+        // Serial.print("  ");
+        // Serial.print(quat[3] );
         // Serial.print("  ");
     // }
     #else
@@ -265,10 +321,27 @@ void initMpuPins(){
 }
 
 
-uint8_t dmpGetEuler(float *data, Quaternion *q) {
+uint8_t dmpGetEuler(float *data, Quaternion * q) {
     data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
     data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
     data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
+
+    // roll (x-axis rotation)
+	// double sinr_cosp = +2.0 * (q.w * q.x + q.y * q.z);
+	// double cosr_cosp = +1.0 - 2.0 * (q.x * q.x + q.y * q.y);
+	// data[0] = atan2(sinr_cosp, cosr_cosp);
+
+	// // pitch (y-axis rotation)
+	// double sinp = +2.0 * (q.w * q.y - q.z * q.x);
+	// if (fabs(sinp) >= 1)
+	// 	data[1] = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+	// else
+	// 	data[1] = asin(sinp);
+
+	// // yaw (z-axis rotation)
+	// double siny_cosp = +2.0 * (q.w * q.z + q.x * q.y);
+	// double cosy_cosp = +1.0 - 2.0 * (q.y * q.y + q.z * q.z);  
+	// data[2] = atan2(siny_cosp, cosy_cosp);
     return 0;
 }
 
