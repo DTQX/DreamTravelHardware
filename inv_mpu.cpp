@@ -693,6 +693,8 @@ int mpu_init()
     st.chip_cfg.dmp_loaded = 0;
     st.chip_cfg.dmp_sample_rate = 0;
 
+    if (mpu_set_bypass(1))
+        return -8;
     if (mpu_set_gyro_fsr(2000))
         return -3;
     if (mpu_set_accel_fsr(2))
@@ -707,15 +709,15 @@ int mpu_init()
     // if (int_param)
     //     reg_int_cb(int_param);
 
-#ifdef AK89xx_SECONDARY
-    setup_compass();
-    if (mpu_set_compass_sample_rate(10))
-        return -1;
-#else
-    /* Already disabled by setup_compass. */
-    if (mpu_set_bypass(0))
-        return -8;
-#endif
+// #ifdef AK89xx_SECONDARY
+//     setup_compass();
+//     if (mpu_set_compass_sample_rate(10))
+//         return -1;
+// #else
+//     /* Already disabled by setup_compass. */
+//     if (mpu_set_bypass(0))
+//         return -8;
+// #endif
 
     if(mpu_set_sensors(0)){
         return -9;
@@ -3384,3 +3386,4 @@ int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
     // more[0] = fifo_count / length - 1;
     return 0;
 }
+

@@ -88,7 +88,6 @@ void setup() {
 
     // initialize serial communication
     Serial.begin(COM_RATE);
-    delay(50);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // initialize device
@@ -100,9 +99,6 @@ void setup() {
 //     // while (!Serial.available());                 // wait for data
 //     // while (Serial.available() && Serial.read()); // empty buffer again
 
-    // test
-    
-    // Serial.print(readBit_c(44));
 }
 
 
@@ -144,17 +140,15 @@ void loop() {
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
-    // int readResult = 1;
+    // int result = 1;
     unsigned char more[1];
-    // int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     Serial.print("-----");
     Serial.println(millis());
-    int readResult = mpu_read_fifo_stream(dmp_get_packet_length(), fifoBuffer, more);;
     
-    if(readResult){
-
+    if(result){
         DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
-        DEBUG_PRINTLN(readResult);
+        DEBUG_PRINTLN(result);
         return -1;
     }
         long quat[4];
@@ -314,6 +308,7 @@ void initMpuPins(){
     for(int i = 0; i<MPU_NUM; i++){
         pinMode(mpuPins[i], OUTPUT); 
     }
+
     //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
     for(int i = 0; i<MPU_NUM; i++){
         digitalWrite(mpuPins[i], HIGH); 
@@ -326,265 +321,35 @@ uint8_t dmpGetEuler(float *data, Quaternion * q) {
     data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
     data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
 
-    // roll (x-axis rotation)
-	// double sinr_cosp = +2.0 * (q.w * q.x + q.y * q.z);
-	// double cosr_cosp = +1.0 - 2.0 * (q.x * q.x + q.y * q.y);
-	// data[0] = atan2(sinr_cosp, cosr_cosp);
-
-	// // pitch (y-axis rotation)
-	// double sinp = +2.0 * (q.w * q.y - q.z * q.x);
-	// if (fabs(sinp) >= 1)
-	// 	data[1] = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
-	// else
-	// 	data[1] = asin(sinp);
-
-	// // yaw (z-axis rotation)
-	// double siny_cosp = +2.0 * (q.w * q.z + q.x * q.y);
-	// double cosy_cosp = +1.0 - 2.0 * (q.y * q.y + q.z * q.z);  
-	// data[2] = atan2(siny_cosp, cosy_cosp);
     return 0;
 }
 
-static void tap_cb(unsigned char direction, unsigned char count)
-{
-}
 
-static void android_orient_cb(unsigned char orientation)
-{
-}
-
-
-/* These next two functions converts the orientation matrix (see
- * gyro_orientation) to a scalar representation for use by the DMP.
- * NOTE: These functions are borrowed from Invensense's MPL.
- */
-static inline unsigned short inv_row_2_scale(const signed char *row)
-{
-    unsigned short b;
-
-    if (row[0] > 0)
-        b = 0;
-    else if (row[0] < 0)
-        b = 4;
-    else if (row[1] > 0)
-        b = 1;
-    else if (row[1] < 0)
-        b = 5;
-    else if (row[2] > 0)
-        b = 2;
-    else if (row[2] < 0)
-        b = 6;
-    else
-        b = 7;      // error
-    return b;
-}
-
-static inline unsigned short inv_orientation_matrix_to_scalar(
-    const signed char *mtx)
-{
-    unsigned short scalar;
-
-    /*
-       XYZ  010_001_000 Identity Matrix
-       XZY  001_010_000
-       YXZ  010_000_001
-       YZX  000_010_001
-       ZXY  001_000_010
-       ZYX  000_001_010
-     */
-
-    scalar = inv_row_2_scale(mtx);
-    scalar |= inv_row_2_scale(mtx + 3) << 3;
-    scalar |= inv_row_2_scale(mtx + 6) << 6;
-
-
-    return scalar;
-}
-
-/* The sensors can be mounted onto the board in any orientation. The mounting
- * matrix seen below tells the MPL how to rotate the raw data from thei
- * driver(s).
- * TODO: The following matrices refer to the configuration on an internal test
- * board at Invensense. If needed, please modify the matrices to match the
- * chip-to-body matrix for your particular set up.
- */
-static signed char gyro_orientation[9] = {1, 0, 0,
-                                           0,1, 0,
-                                           0, 0, 1};
 
 // initialize device
 void initDevice(){
     Serial.println(F("Initializing I2C devices..."));
-    int innerResultCode[2] = {0,0};
-    int resultCode;
     dmp_init_struct();
     mpu_init_struct();
-    // for(int i = 0; i< MPU_NUM; i++){
+    int result = 0;
+    for(int i = 0; i< MPU_NUM; i++){
         // 选中mpu
-        //  selectMPU(mpuPins[i]);
-
+        selectMPU(mpuPins[i]);
         // delay(20);
 
-        int result = mpu_init();
-
+        
+        Serial.print(mpuPins[i]);
+        Serial.print("---");
+        result = init_device();
         if(result){
-            Serial.print(F("mpu_init error!"));
+            Serial.print("error:");
             Serial.println(result);
-            dmpReady = false;
-            return;
+        }else
+        {
+            Serial.println("success");
         }
-
-        mpu_set_bypass(1);
-
-        /* Get/set hardware configuration. Start gyro. */
-        /* Wake up all sensors. */
-        if(mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
-            Serial.print(F("mpu_set_sensors error"));
-            dmpReady = false;
-            return;
-        }
-        /* Push both gyro and accel data into the FIFO. */
-        if(mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
-            Serial.print(F("mpu_configure_fifo error"));
-            dmpReady = false;
-            return;
-        }
-        if(mpu_set_sample_rate(100)){
-            Serial.print(F("mpu_set_sample_rate error"));
-            dmpReady = false;
-            return;
-        }
-        
-        
-        /* Read back configuration in case it was set improperly. */
-        unsigned char accel_fsr;
-        unsigned short gyro_rate, gyro_fsr;
-        unsigned long timestamp;
-        if(mpu_get_sample_rate(&gyro_rate)){
-            Serial.print(F("mpu_get_sample_rate error"));
-            dmpReady = false;
-            return;
-        }
-        
-        ;
-        if(mpu_get_gyro_fsr(&gyro_fsr)){
-            Serial.print(F("mpu_get_gyro_fsr error"));
-            dmpReady = false;
-            return;
-        }
-        
-        ;
-        if(mpu_get_accel_fsr(&accel_fsr)){
-            Serial.print(F("mpu_get_accel_fsr error"));
-            dmpReady = false;
-            return;
-        }
-        
-        ;
-
-        /* Initialize HAL state variables. */
-        // memset(&hal, 0, sizeof(hal));
-        // hal.sensors = ACCEL_ON | GYRO_ON;
-        // hal.report = PRINT_QUAT;
-
-        /* To initialize the DMP:
-     * 1. Call dmp_load_motion_driver_firmware(). This pushes the DMP image in
-     *    inv_mpu_dmp_motion_driver.h into the MPU memory.
-     * 2. Push the gyro and accel orientation matrix to the DMP.
-     * 3. Register gesture callbacks. Don't worry, these callbacks won't be
-     *    executed unless the corresponding feature is enabled.
-     * 4. Call dmp_enable_feature(mask) to enable different features.
-     * 5. Call dmp_set_fifo_rate(freq) to select a DMP output rate.
-     * 6. Call any feature-specific control functions.
-     *
-     * To enable the DMP, just call mpu_set_dmp_state(1). This function can
-     * be called repeatedly to enable and disable the DMP at runtime.
-     *
-     * The following is a short summary of the features supported in the DMP
-     * image provided in inv_mpu_dmp_motion_driver.c:
-     * DMP_FEATURE_LP_QUAT: Generate a gyro-only quaternion on the DMP at
-     * 200Hz. Integrating the gyro data at higher rates reduces numerical
-     * errors (compared to integration on the MCU at a lower sampling rate).
-     * DMP_FEATURE_6X_LP_QUAT: Generate a gyro/accel quaternion on the DMP at
-     * 200Hz. Cannot be used in combination with DMP_FEATURE_LP_QUAT.
-     * DMP_FEATURE_TAP: Detect taps along the X, Y, and Z axes.
-     * DMP_FEATURE_ANDROID_ORIENT: Google's screen rotation algorithm. Triggers
-     * an event at the four orientations where the screen should rotate.
-     * DMP_FEATURE_GYRO_CAL: Calibrates the gyro data after eight seconds of
-     * no motion.
-     * DMP_FEATURE_SEND_RAW_ACCEL: Add raw accelerometer data to the FIFO.
-     * DMP_FEATURE_SEND_RAW_GYRO: Add raw gyro data to the FIFO.
-     * DMP_FEATURE_SEND_CAL_GYRO: Add calibrated gyro data to the FIFO. Cannot
-     * be used in combination with DMP_FEATURE_SEND_RAW_GYRO.
-     */
-    result = dmp_load_motion_driver_firmware();
-    if(result){
-            Serial.print(F("dmp_load_motion_driver_firmware error :"));
-            Serial.println(result);
-            dmpReady = false;
-            return;
-        }
-        
-    ;
-    if(dmp_set_orientation(
-        inv_orientation_matrix_to_scalar(gyro_orientation))){
-        Serial.print(F("dmp_set_orientation error"));
-        dmpReady = false;
-        return;
-    }
-        
-    
-    if(dmp_register_tap_cb(tap_cb)){
-        Serial.print(F("dmp_register_tap_cb error"));
-        dmpReady = false;
-        return;
-    }
-        
-    ;
-    if(dmp_register_android_orient_cb(android_orient_cb)){
-            Serial.print(F("dmp_register_android_orient_cb error"));
-        dmpReady = false;
-        return;
-    }
-        
-    ;
-    /*
-     * Known Bug -
-     * DMP when enabled will sample sensor data at 200Hz and output to FIFO at the rate
-     * specified in the dmp_set_fifo_rate API. The DMP will then sent an interrupt once
-     * a sample has been put into the FIFO. Therefore if the dmp_set_fifo_rate is at 25Hz
-     * there will be a 25Hz interrupt from the MPU device.
-     *
-     * There is a known issue in which if you do not enable DMP_FEATURE_TAP
-     * then the interrupts will be at 200Hz even if fifo rate
-     * is set at a different rate. To avoid this issue include the DMP_FEATURE_TAP
-     */
-    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
-        DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-        DMP_FEATURE_GYRO_CAL)){
-        Serial.print(F("dmp_enable_feature error"));
-        dmpReady = false;
-        return;
-    }
-    
-    
-    if(dmp_set_fifo_rate(100)){
-            Serial.print(F("dmp_set_fifo_rate error"));
-        dmpReady = false;
-        return;
-    }
-        
-    ;
-    if(mpu_set_dmp_state(1)){
-            Serial.print(F("mpu_set_dmp_state error"));
-        dmpReady = false;
-        return;
-    }
-        
-    ;
-
 
         // 取消选中mpu
-    //     unselectMPU(mpuPins[i]); 
-    // }
+        unselectMPU(mpuPins[i]); 
+    }
 }
