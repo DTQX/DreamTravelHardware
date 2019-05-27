@@ -24,13 +24,15 @@
 #define COM_RATE (115200)   // 串口通信速率
 
 // 数据发送相关
-#define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
+#define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
+// #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 10;    // 数据发送间隔时间，单位ms
-uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
-unsigned long lastSendTime = 10;     // 数据上一次发送的时间
-double QUAT_SENS  = 1073741824.0;
+uint8_t lastPacket[MPU_NUM * MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
+unsigned long lastSendTime = 0;     // 数据上一次发送的时间
+// double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
+double QUAT_SENS  = 1073741824.0 >> 16;   // 对应 MPU_DATA_SIZE 8 
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -141,10 +143,12 @@ void loop() {
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
     // int result = 1;
-    unsigned char more[1];
-    int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    // unsigned char more[1];
     Serial.print("-----");
     Serial.println(millis());
+
+    int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    
     
     if(result){
         DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
@@ -195,14 +199,15 @@ int updateOneLastPacket(int index){
         // Serial.print(quat[3] );
         // Serial.print("  ");
     
-    // memcpy(lastPacket[index], fifoBuffer, 16 * sizeof(uint8_t));
 
     // mpu数据填充到 lastPacket
-    for (size_t i = 0; i < MPU_DATA_SIZE; i++)
-    {
-        lastPacket[index][i] = fifoBuffer[i];
-    }
+    // for (size_t i = 0; i < MPU_DATA_SIZE; i++)
+    // {
+    //     lastPacket[index * MPU_DATA_SIZE + i] = fifoBuffer[i];
+    // }
     
+    memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
+
     return 1;
 }
 
