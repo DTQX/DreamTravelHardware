@@ -126,8 +126,7 @@ void loop() {
         // delay(15);
         // Serial.print("----------------");
 
-        // 发送一个 mpu 的数据
-        sendOneData(i);
+        
 
         // 取消选中mpu
         unselectMPU(mpuPins[i]);
@@ -136,6 +135,9 @@ void loop() {
         // while( millis() - lastSendTime < intervalTime);
 
     }
+
+    // 发送一个完整的数据包
+    sendOneData(i);
 
 }
 
@@ -155,27 +157,27 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(result);
         return -1;
     }
-        long quat[4];
-        quat[0] = ((long)fifoBuffer[0] << 24) | ((long)fifoBuffer[1] << 16) |
-            ((long)fifoBuffer[2] << 8) | fifoBuffer[3];
-        quat[1] = ((long)fifoBuffer[4] << 24) | ((long)fifoBuffer[5] << 16) |
-            ((long)fifoBuffer[6] << 8) | fifoBuffer[7];
-        quat[2] = ((long)fifoBuffer[8] << 24) | ((long)fifoBuffer[9] << 16) |
-            ((long)fifoBuffer[10] << 8) | fifoBuffer[11];
-        quat[3] = ((long)fifoBuffer[12] << 24) | ((long)fifoBuffer[13] << 16) |
-            ((long)fifoBuffer[14] << 8) | fifoBuffer[15];
-        q.w = quat[0] / QUAT_SENS;
-        q.x = quat[1] / QUAT_SENS;
-        q.y = quat[2] / QUAT_SENS;
-        q.z = quat[3] / QUAT_SENS;
-        dmpGetEuler(euler, &q);
+        // long quat[4];
+        // quat[0] = ((long)fifoBuffer[0] << 24) | ((long)fifoBuffer[1] << 16) |
+        //     ((long)fifoBuffer[2] << 8) | fifoBuffer[3];
+        // quat[1] = ((long)fifoBuffer[4] << 24) | ((long)fifoBuffer[5] << 16) |
+        //     ((long)fifoBuffer[6] << 8) | fifoBuffer[7];
+        // quat[2] = ((long)fifoBuffer[8] << 24) | ((long)fifoBuffer[9] << 16) |
+        //     ((long)fifoBuffer[10] << 8) | fifoBuffer[11];
+        // quat[3] = ((long)fifoBuffer[12] << 24) | ((long)fifoBuffer[13] << 16) |
+        //     ((long)fifoBuffer[14] << 8) | fifoBuffer[15];
+        // q.w = quat[0] / QUAT_SENS;
+        // q.x = quat[1] / QUAT_SENS;
+        // q.y = quat[2] / QUAT_SENS;
+        // q.z = quat[3] / QUAT_SENS;
+        // dmpGetEuler(euler, &q);
 
-        Serial.print("euler\t");
-        Serial.print(euler[0] * 180/M_PI);
-        Serial.print("\t");
-        Serial.print(euler[1] * 180/M_PI);
-        Serial.print("\t");
-        Serial.println(euler[2] * 180/M_PI);
+        // Serial.print("euler\t");
+        // Serial.print(euler[0] * 180/M_PI);
+        // Serial.print("\t");
+        // Serial.print(euler[1] * 180/M_PI);
+        // Serial.print("\t");
+        // Serial.println(euler[2] * 180/M_PI);
 
         // Serial.print("Quat :");
         
@@ -206,15 +208,33 @@ int updateOneLastPacket(int index){
     //     lastPacket[index * MPU_DATA_SIZE + i] = fifoBuffer[i];
     // }
     
-    memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
+    // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
+
+    lastPacket[index * MPU_DATA_SIZE + 0] = fifoBuffer[0];
+    lastPacket[index * MPU_DATA_SIZE + 1] = fifoBuffer[1];
+    lastPacket[index * MPU_DATA_SIZE + 2] = fifoBuffer[4];
+    lastPacket[index * MPU_DATA_SIZE + 3] = fifoBuffer[5];
+    lastPacket[index * MPU_DATA_SIZE + 4] = fifoBuffer[8];
+    lastPacket[index * MPU_DATA_SIZE + 5] = fifoBuffer[9];
+    lastPacket[index * MPU_DATA_SIZE + 6] = fifoBuffer[12];
+    lastPacket[index * MPU_DATA_SIZE + 7] = fifoBuffer[13];
 
     return 1;
 }
 
-// 发送一个 mpu 的数据
-void sendOneData(int index){
+// 发送一个 完整的数据
+void sendOneData(){
     //发送数据，如果是一个数据包的开始，则发送开始标志符
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
+
+    #ifdef DEBUG
+    
+    #else
+    Serial.write(START_CODE_1);
+    Serial.write(START_CODE_2);
+    #endif
+
+
     if(index == 0){
         #ifdef DEBUG
         Serial.print(START_CODE_1,HEX);
@@ -229,48 +249,7 @@ void sendOneData(int index){
     // for(int j = 0; j < MPU_DATA_SIZE; j++){
         // Serial.print(lastPacket[index][j],HEX);
 
-        // long quat[4];
-        // quat[0] = ((long)lastPacket[index][0] << 24) | ((long)lastPacket[index][1] << 16) |
-        //     ((long)lastPacket[index][2] << 8) | lastPacket[index][3];
-        // quat[1] = ((long)lastPacket[index][4] << 24) | ((long)lastPacket[index][5] << 16) |
-        //     ((long)lastPacket[index][6] << 8) | lastPacket[index][7];
-        // quat[2] = ((long)lastPacket[index][8] << 24) | ((long)lastPacket[index][9] << 16) |
-        //     ((long)lastPacket[index][10] << 8) | lastPacket[index][11];
-        // quat[3] = ((long)lastPacket[index][12] << 24) | ((long)lastPacket[index][13] << 16) |
-        //     ((long)lastPacket[index][14] << 8) | lastPacket[index][15];
-        // q.w = quat[0] / QUAT_SENS;
-        // q.x = quat[1] / QUAT_SENS;
-        // q.y = quat[2] / QUAT_SENS;
-        // q.z = quat[3] / QUAT_SENS;
-        // dmpGetEuler(euler, q);
-        // Serial.print("euler");
-        // Serial.print(euler[0]);
-        // Serial.print("  ");
-        // Serial.print(euler[1]);
-        // Serial.print("  ");
-        // Serial.println(euler[2]);
-
-        // Serial.print("Quat :");
-        
-        // Serial.print(quat[0] / QUAT_SENS);
-        // Serial.print("  ");
-        // Serial.print(quat[1] / QUAT_SENS);
-        // Serial.print("  ");
-        // Serial.print(quat[2] / QUAT_SENS);
-        // Serial.print("  ");
-        // Serial.print(quat[3] / QUAT_SENS);
-        // Serial.print("  ");
-
-        // Serial.print("origin Quat :");
-        
-        // Serial.print(quat[0] );
-        // Serial.print("  ");
-        // Serial.print(quat[1]);
-        // Serial.print("  ");
-        // Serial.print(quat[2] );
-        // Serial.print("  ");
-        // Serial.print(quat[3] );
-        // Serial.print("  ");
+      
     // }
     #else
     for(int j = 0; j < MPU_DATA_SIZE; j++){
