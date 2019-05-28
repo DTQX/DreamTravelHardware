@@ -124,9 +124,6 @@ void loop() {
         // 更新lastPacket
         updateOneLastPacket(i);
         // delay(15);
-        // Serial.print("----------------");
-
-        
 
         // 取消选中mpu
         unselectMPU(mpuPins[i]);
@@ -138,7 +135,6 @@ void loop() {
 
     // 发送一个完整的数据包
     sendOneData(i);
-
 }
 
 // 更新一个 mpu 的lastPacket
@@ -203,13 +199,7 @@ int updateOneLastPacket(int index){
     
 
     // mpu数据填充到 lastPacket
-    // for (size_t i = 0; i < MPU_DATA_SIZE; i++)
-    // {
-    //     lastPacket[index * MPU_DATA_SIZE + i] = fifoBuffer[i];
-    // }
-    
     // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
-
     lastPacket[index * MPU_DATA_SIZE + 0] = fifoBuffer[0];
     lastPacket[index * MPU_DATA_SIZE + 1] = fifoBuffer[1];
     lastPacket[index * MPU_DATA_SIZE + 2] = fifoBuffer[4];
@@ -228,61 +218,36 @@ void sendOneData(){
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 
     #ifdef DEBUG
-    
+    Serial.print(START_CODE_1);
+    Serial.print(START_CODE_1);
+
+     for(int j = 0; j < MPU_NUM * MPU_DATA_SIZE; j++){
+        Serial.print(lastPacket[index][j]);
+    }
+
+    Serial.print(START_CODE_2);
+    Serial.print(START_CODE_2);
     #else
     Serial.write(START_CODE_1);
+    Serial.write(START_CODE_1);
+
+    Serial.write(lastPacket, MPU_NUM * MPU_DATA_SIZE);
+
     Serial.write(START_CODE_2);
-    #endif
+    Serial.write(START_CODE_2);
 
-
-    if(index == 0){
-        #ifdef DEBUG
-        Serial.print(START_CODE_1,HEX);
-        Serial.print(START_CODE_2,HEX);
-        Serial.print(" ");
-        #else
-        Serial.write(START_CODE_1);
-        Serial.write(START_CODE_2);
-        #endif
-    }
-    #ifdef DEBUG
-    // for(int j = 0; j < MPU_DATA_SIZE; j++){
-        // Serial.print(lastPacket[index][j],HEX);
-
-      
-    // }
-    #else
-    for(int j = 0; j < MPU_DATA_SIZE; j++){
-        Serial.write(lastPacket[index][j]);
-    }
-    // Serial.write(fifoBuffer[0]);Serial.write(fifoBuffer[1]);
-    // Serial.write(fifoBuffer[4]);Serial.write(fifoBuffer[5]);
-    // Serial.write(fifoBuffer[8]);Serial.write(fifoBuffer[9]);
-    // Serial.write(fifoBuffer[12]);Serial.write(fifoBuffer[13]);
-    #endif
-    // 发送数据包的结束编码, 不再发送结束编码
-    #ifdef DEBUG
-    if(index == MPU_NUM - 1){
-      Serial.println();
-    //     #ifdef DEBUG
-    //     //Serial.println(START_CODE_2,HEX);
-    //     Serial.print(START_CODE_2,HEX);
-    //     #else
-    //     Serial.write(START_CODE_2);
-    //     #endif
-    }
     #endif
 }
 
 // 选中mpu
 void selectMPU(int mpuPin){
-    // digitalWrite(mpuPin, LOW);
+    digitalWrite(mpuPin, LOW);
     // delay(50);
 }
 
 // 取消选中mpu
 void unselectMPU(int mpuPin){
-    // digitalWrite(mpuPin, HIGH);
+    digitalWrite(mpuPin, HIGH);
     //delay(500);
 }
 
