@@ -1450,10 +1450,6 @@ int dmp_register_tap_cb(void (*func)(unsigned char, unsigned char))
     return 0;
 }
 
-static void android_orient_cb(unsigned char orientation)
-{
-}
-
 
 /**
  *  @brief      Register a function to be executed on a android orientation event.
@@ -1554,7 +1550,7 @@ int init_device(){
     if(result){
         Serial.print(F("mpu_init error!"));
         Serial.println(result);
-        dmpReady = false;
+        
         return -1;
     }
 
@@ -1562,18 +1558,18 @@ int init_device(){
     /* Wake up all sensors. */
     if(mpu_set_sensors(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
         Serial.print(F("mpu_set_sensors error"));
-        dmpReady = false;
+        
         return -2;
     }
     /* Push both gyro and accel data into the FIFO. */
     if(mpu_configure_fifo(INV_XYZ_GYRO | INV_XYZ_ACCEL)){
         Serial.print(F("mpu_configure_fifo error"));
-        dmpReady = false;
+        
         return -3;
     }
     if(mpu_set_sample_rate(100)){
         Serial.print(F("mpu_set_sample_rate error"));
-        dmpReady = false;
+        
         return -4;
     }
         
@@ -1584,19 +1580,19 @@ int init_device(){
     unsigned long timestamp;
     if(mpu_get_sample_rate(&gyro_rate)){
         Serial.print(F("mpu_get_sample_rate error"));
-        dmpReady = false;
+        
         return -5;
     }
     
     if(mpu_get_gyro_fsr(&gyro_fsr)){
         Serial.print(F("mpu_get_gyro_fsr error"));
-        dmpReady = false;
+        
         return -6;
     }
     
     if(mpu_get_accel_fsr(&accel_fsr)){
         Serial.print(F("mpu_get_accel_fsr error"));
-        dmpReady = false;
+        
         return -7;
     }
         
@@ -1634,27 +1630,27 @@ int init_device(){
     if(result){
             Serial.print(F("dmp_load_motion_driver_firmware error :"));
             Serial.println(result);
-            dmpReady = false;
+            
             return -8;
         }
         
     if(dmp_set_orientation(
         inv_orientation_matrix_to_scalar(gyro_orientation))){
         Serial.print(F("dmp_set_orientation error"));
-        dmpReady = false;
+        
         return -9;
     }
         
     
     if(dmp_register_tap_cb(tap_cb)){
         Serial.print(F("dmp_register_tap_cb error"));
-        dmpReady = false;
+        
         return -10;
     }
         
     if(dmp_register_android_orient_cb(android_orient_cb)){
             Serial.print(F("dmp_register_android_orient_cb error"));
-        dmpReady = false;
+        
         return -11;
     }
         
@@ -1673,20 +1669,20 @@ int init_device(){
         DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
         DMP_FEATURE_GYRO_CAL)){
         Serial.print(F("dmp_enable_feature error"));
-        dmpReady = false;
+        
         return -12;
     }
     
     
     if(dmp_set_fifo_rate(100)){
             Serial.print(F("dmp_set_fifo_rate error"));
-        dmpReady = false;
+        
         return -13;
     }
         
     if(mpu_set_dmp_state(1)){
             Serial.print(F("mpu_set_dmp_state error"));
-        dmpReady = false;
+        
         return -14;
     }
     

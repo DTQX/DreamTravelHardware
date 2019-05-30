@@ -32,7 +32,7 @@ const int intervalTime = 10;    // 数据发送间隔时间，单位ms
 uint8_t lastPacket[MPU_NUM * MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
-double QUAT_SENS  = 1073741824.0 >> 16;   // 对应 MPU_DATA_SIZE 8 
+double QUAT_SENS  = 16384.0;   // 对应 MPU_DATA_SIZE 8 
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -134,16 +134,14 @@ void loop() {
     }
 
     // 发送一个完整的数据包
-    sendOneData(i);
+    sendOneData();
 }
 
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
-    // int result = 1;
-    // unsigned char more[1];
-    Serial.print("-----");
-    Serial.println(millis());
+    // Serial.print("-----");
+    // Serial.println(millis());
 
     int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     
@@ -153,49 +151,46 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(result);
         return -1;
     }
-        // long quat[4];
-        // quat[0] = ((long)fifoBuffer[0] << 24) | ((long)fifoBuffer[1] << 16) |
-        //     ((long)fifoBuffer[2] << 8) | fifoBuffer[3];
-        // quat[1] = ((long)fifoBuffer[4] << 24) | ((long)fifoBuffer[5] << 16) |
-        //     ((long)fifoBuffer[6] << 8) | fifoBuffer[7];
-        // quat[2] = ((long)fifoBuffer[8] << 24) | ((long)fifoBuffer[9] << 16) |
-        //     ((long)fifoBuffer[10] << 8) | fifoBuffer[11];
-        // quat[3] = ((long)fifoBuffer[12] << 24) | ((long)fifoBuffer[13] << 16) |
-        //     ((long)fifoBuffer[14] << 8) | fifoBuffer[15];
-        // q.w = quat[0] / QUAT_SENS;
-        // q.x = quat[1] / QUAT_SENS;
-        // q.y = quat[2] / QUAT_SENS;
-        // q.z = quat[3] / QUAT_SENS;
-        // dmpGetEuler(euler, &q);
+    long quat[4];
+    quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
+    quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
+    quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
+    quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
+    q.w = quat[0] / QUAT_SENS;
+    q.x = quat[1] / QUAT_SENS;
+    q.y = quat[2] / QUAT_SENS;
+    q.z = quat[3] / QUAT_SENS;
+    dmpGetEuler(euler, &q);
 
-        // Serial.print("euler\t");
-        // Serial.print(euler[0] * 180/M_PI);
-        // Serial.print("\t");
-        // Serial.print(euler[1] * 180/M_PI);
-        // Serial.print("\t");
-        // Serial.println(euler[2] * 180/M_PI);
+    Serial.print(index);
+    Serial.print(" --- euler:\t");
+    Serial.print(euler[0] * 180/M_PI);
+    Serial.print("\t");
+    Serial.print(euler[1] * 180/M_PI);
+    Serial.print("\t");
+    Serial.println(euler[2] * 180/M_PI);
 
-        // Serial.print("Quat :");
-        
-        // Serial.print(q.x);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
+    // Serial.print("Quat :");
+    
+    // Serial.print(q.x);
+    // Serial.print("  ");
+    // Serial.print(q.y);
+    // Serial.print("  ");
+    // Serial.print(q.y);
+    // Serial.print("  ");
+    // Serial.print(q.y);
+    // Serial.print("  ");
 
-        // Serial.print("origin Quat :");
-        
-        // Serial.print(quat[0] );
-        // Serial.print("  ");
-        // Serial.print(quat[1]);
-        // Serial.print("  ");
-        // Serial.print(quat[2] );
-        // Serial.print("  ");
-        // Serial.print(quat[3] );
-        // Serial.print("  ");
+    // Serial.print("origin Quat :");
+    
+    // Serial.print(quat[0] );
+    // Serial.print("  ");
+    // Serial.print(quat[1]);
+    // Serial.print("  ");
+    // Serial.print(quat[2] );
+    // Serial.print("  ");
+    // Serial.print(quat[3] );
+    // Serial.print("  ");
     
 
     // mpu数据填充到 lastPacket
@@ -218,15 +213,15 @@ void sendOneData(){
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 
     #ifdef DEBUG
-    Serial.print(START_CODE_1);
-    Serial.print(START_CODE_1);
+    // Serial.print(START_CODE_1);
+    // Serial.print(START_CODE_1);
 
-     for(int j = 0; j < MPU_NUM * MPU_DATA_SIZE; j++){
-        Serial.print(lastPacket[index][j]);
-    }
+    // for(int j = 0; j < MPU_NUM * MPU_DATA_SIZE; j++){
+    //     Serial.print(lastPacket[j]);
+    // }
 
-    Serial.print(START_CODE_2);
-    Serial.print(START_CODE_2);
+    // Serial.print(START_CODE_2);
+    // Serial.println(START_CODE_2);
     #else
     Serial.write(START_CODE_1);
     Serial.write(START_CODE_1);
@@ -284,7 +279,7 @@ void initDevice(){
     for(int i = 0; i< MPU_NUM; i++){
         // 选中mpu
         selectMPU(mpuPins[i]);
-        // delay(20);
+        delay(20);
 
         
         Serial.print(mpuPins[i]);
@@ -293,6 +288,7 @@ void initDevice(){
         if(result){
             Serial.print("error:");
             Serial.println(result);
+
         }else
         {
             Serial.println("success");
