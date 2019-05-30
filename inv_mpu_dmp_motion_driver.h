@@ -97,7 +97,7 @@ int dmp_read_fifo(short *gyro, short *accel, long *quat,
 
 unsigned char dmp_get_packet_length();
 
-int init_device()；
+// int init_device()
 
 #endif  /* #ifndef _INV_MPU_DMP_MOTION_DRIVER_H_ */
 
