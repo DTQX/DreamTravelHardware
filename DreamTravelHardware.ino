@@ -173,22 +173,23 @@ int updateOneLastPacket(int index){
         dmpGetEuler(euler, &q);
 
         Serial.print("euler\t");
-        Serial.print(euler[0] * 180/M_PI);
+        Serial.print(euler[0] * 180/3.1415);
         Serial.print("\t");
-        Serial.print(euler[1] * 180/M_PI);
+        Serial.print(euler[1] * 180/3.1415);
         Serial.print("\t");
-        Serial.println(euler[2] * 180/M_PI);
+        Serial.println(euler[2] * 180/3.1415);
 
-        // Serial.print("Quat :");
+        Serial.print("Quat :");
         
-        // Serial.print(q.x);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
-        // Serial.print(q.y);
-        // Serial.print("  ");
+        Serial.print(q.w);
+        Serial.print("  ");
+        Serial.print(q.x);
+        Serial.print("  ");
+        Serial.print(q.y);
+        Serial.print("  ");
+        Serial.print(q.z);
+        
+        Serial.println("  ");
 
         // Serial.print("origin Quat :");
         
@@ -326,21 +327,21 @@ uint8_t dmpGetEuler(float *data, Quaternion * q) {
     data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
     data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
 
-    // roll (x-axis rotation)
-	// double sinr_cosp = +2.0 * (q.w * q.x + q.y * q.z);
-	// double cosr_cosp = +1.0 - 2.0 * (q.x * q.x + q.y * q.y);
+    // // roll (x-axis rotation)
+	// double sinr_cosp = +2.0 * (q->w * q->x + q->y * q->z);
+	// double cosr_cosp = +1.0 - 2.0 * (q->x * q->x + q->y * q->y);
 	// data[0] = atan2(sinr_cosp, cosr_cosp);
 
 	// // pitch (y-axis rotation)
-	// double sinp = +2.0 * (q.w * q.y - q.z * q.x);
+	// double sinp = +2.0 * (q->w * q->y - q->z * q->x);
 	// if (fabs(sinp) >= 1)
-	// 	data[1] = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+	// 	data[1] = copysign(3.1415 / 2, sinp); // use 90 degrees if out of range
 	// else
 	// 	data[1] = asin(sinp);
 
 	// // yaw (z-axis rotation)
-	// double siny_cosp = +2.0 * (q.w * q.z + q.x * q.y);
-	// double cosy_cosp = +1.0 - 2.0 * (q.y * q.y + q.z * q.z);  
+	// double siny_cosp = +2.0 * (q->w * q->z + q->x * q->y);
+	// double cosy_cosp = +1.0 - 2.0 * (q->y * q->y + q->z * q->z);  
 	// data[2] = atan2(siny_cosp, cosy_cosp);
     return 0;
 }
