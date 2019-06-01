@@ -163,23 +163,27 @@ int updateOneLastPacket(int index){
     dmpGetEuler(euler, &q);
 
     Serial.print(index);
-    Serial.print(" --- euler:\t");
-    Serial.print(euler[0] * 180/M_PI);
-    Serial.print("\t");
-    Serial.print(euler[1] * 180/M_PI);
-    Serial.print("\t");
-    Serial.println(euler[2] * 180/M_PI);
+    // Serial.print(" --- euler:\t");
+    // Serial.print(euler[0] * 180/M_PI);
+    // Serial.print("\t");
+    // Serial.print(euler[1] * 180/M_PI);
+    // Serial.print("\t");
+    // Serial.println(euler[2] * 180/M_PI);
 
-    // Serial.print("Quat :");
+    Serial.print(" --- Quat :");
     
-    // Serial.print(q.x);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
+    Serial.print(q.w);
+    Serial.print("  ");
+    Serial.print(q.x);
+    Serial.print("  ");
+    Serial.print(q.y);
+    Serial.print("  ");
+    Serial.print(q.z);
+    Serial.print("  ");
+
+    if(index == 4){
+        Serial.println();
+    }
 
     // Serial.print("origin Quat :");
     
