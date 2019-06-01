@@ -30,7 +30,7 @@ const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 10;    // 数据发送间隔时间，单位ms
 uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 10;     // 数据上一次发送的时间
-double QUAT_SENS  = 1073741824.0;
+double QUAT_SENS  = 16384.0f;
 
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
@@ -157,27 +157,32 @@ int updateOneLastPacket(int index){
         // DEBUG_PRINTLN(readResult);
         return -1;
     }
-        long quat[4];
-        quat[0] = ((long)fifoBuffer[0] << 24) | ((long)fifoBuffer[1] << 16) |
-            ((long)fifoBuffer[2] << 8) | fifoBuffer[3];
-        quat[1] = ((long)fifoBuffer[4] << 24) | ((long)fifoBuffer[5] << 16) |
-            ((long)fifoBuffer[6] << 8) | fifoBuffer[7];
-        quat[2] = ((long)fifoBuffer[8] << 24) | ((long)fifoBuffer[9] << 16) |
-            ((long)fifoBuffer[10] << 8) | fifoBuffer[11];
-        quat[3] = ((long)fifoBuffer[12] << 24) | ((long)fifoBuffer[13] << 16) |
-            ((long)fifoBuffer[14] << 8) | fifoBuffer[15];
+        int16_t quat[4];
+        quat[0] = (fifoBuffer[0] << 8) | (fifoBuffer[1] ) ;
+        quat[1] = (fifoBuffer[4] << 8) | (fifoBuffer[5] ) ;
+        quat[2] = (fifoBuffer[8] << 8) | (fifoBuffer[9] ) ;
+        quat[3] = (fifoBuffer[12] << 8) | (fifoBuffer[13] );
+
         q.w = quat[0] / QUAT_SENS;
         q.x = quat[1] / QUAT_SENS;
         q.y = quat[2] / QUAT_SENS;
         q.z = quat[3] / QUAT_SENS;
         dmpGetEuler(euler, &q);
 
-        Serial.print("euler\t");
-        Serial.print(euler[0] * 180/3.1415);
-        Serial.print("\t");
-        Serial.print(euler[1] * 180/3.1415);
-        Serial.print("\t");
-        Serial.println(euler[2] * 180/3.1415);
+        // Serial.print("euler\t");
+        // Serial.print(euler[0] * 180/3.1415);
+        // Serial.print("\t");
+        // Serial.print(euler[1] * 180/3.1415);
+        // Serial.print("\t");
+        // Serial.println(euler[2] * 180/3.1415);
+
+        // // ue4的不需要
+        // Serial.print("euler\t");
+        // Serial.print(euler[0] );
+        // Serial.print("\t");
+        // Serial.print(euler[1] );
+        // Serial.print("\t");
+        // Serial.println(euler[2] );
 
         Serial.print("Quat :");
         
@@ -187,9 +192,9 @@ int updateOneLastPacket(int index){
         Serial.print("  ");
         Serial.print(q.y);
         Serial.print("  ");
-        Serial.print(q.z);
+        Serial.println(q.z);
         
-        Serial.println("  ");
+        // Serial.println("  ");
 
         // Serial.print("origin Quat :");
         
@@ -323,27 +328,94 @@ void initMpuPins(){
 
 
 uint8_t dmpGetEuler(float *data, Quaternion * q) {
-    data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
-    data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
-    data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
+    // 原来的
+    // data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
+    // data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
+    // data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
 
-    // // roll (x-axis rotation)
-	// double sinr_cosp = +2.0 * (q->w * q->x + q->y * q->z);
-	// double cosr_cosp = +1.0 - 2.0 * (q->x * q->x + q->y * q->y);
-	// data[0] = atan2(sinr_cosp, cosr_cosp);
+    // // 网上找的
+    data[0] = atan2(2*q -> w*q -> x + 2*q -> y*q -> z, 1 - 2*q -> x*q -> x - 2*q -> y*q -> y);   // psi
+    data[1] = asin(2*q -> w*q -> y - 2*q -> z*q -> x);                              // theta
+    data[2] = atan2(2*q -> w*q -> z + 2*q -> x*q -> y, 1 - 2*q -> y*q -> y - 2*q -> z*q -> z);   // phi
 
-	// // pitch (y-axis rotation)
-	// double sinp = +2.0 * (q->w * q->y - q->z * q->x);
-	// if (fabs(sinp) >= 1)
-	// 	data[1] = copysign(3.1415 / 2, sinp); // use 90 degrees if out of range
+    // // ue4的
+    // const float SingularityTest = q->z*q->x - q->w*q->y;
+	// const float YawY = 2.f*(q->w*q->z + q->x*q->y);
+	// const float YawX = (1.f-2.f*((q->y) * (q->y) + (q->z) * (q->z)));
+
+	
+	// float SINGULARITY_THRESHOLD = 0.4999995f;
+	// // float RAD_TO_DEG = (180.f)/PI;
+
+	// if (SingularityTest < -SINGULARITY_THRESHOLD)
+	// {
+	// 	data[0] = -90.f;    // pitch
+	// 	data[1] = atan2(YawY, YawX) * RAD_TO_DEG;    // yaw
+	// 	data[2] = NormalizeAxis(-data[1] - (2.f * atan2(q->x, q->w) * RAD_TO_DEG));       // roll
+	// }
+	// else if (SingularityTest > SINGULARITY_THRESHOLD)
+	// {
+	// 	data[0] = 90.f;
+	// 	data[1] = atan2(YawY, YawX) * RAD_TO_DEG;
+	// 	data[2] = NormalizeAxis(data[1] - (2.f * atan2(q->x, q->w) * RAD_TO_DEG));
+	// }
 	// else
-	// 	data[1] = asin(sinp);
+	// {
+	// 	data[0] = asin(2.f*(SingularityTest)) * RAD_TO_DEG;
+	// 	data[1] = atan2(YawY, YawX) * RAD_TO_DEG;
+	// 	data[2] = atan2(-2.f*(q->w*q->x+q->y*q->z), (1.f-2.f*((q->x) * (q->x) + (q->y) * (q->y)))) * RAD_TO_DEG;
+	// }
 
-	// // yaw (z-axis rotation)
-	// double siny_cosp = +2.0 * (q->w * q->z + q->x * q->y);
-	// double cosy_cosp = +1.0 - 2.0 * (q->y * q->y + q->z * q->z);  
-	// data[2] = atan2(siny_cosp, cosy_cosp);
+    
     return 0;
+}
+
+float ClampAxis( float Angle )
+{
+	// returns Angle in the range (-360,360)
+    Angle = Fmod(Angle, 360.f);
+
+	if (Angle < 0.f)
+	{
+		// shift to [0,360) range
+		Angle += 360.f;
+	}
+
+	return Angle;
+}
+
+float Fmod(float X, float Y)
+	{
+		if (fabsf(Y) <= 1.e-8f)
+		{
+			return 0.f;
+		}
+		const float Quotient = (int32_t)(X / Y);
+		float IntPortion = Y * Quotient;
+
+		// Rounding and imprecision could cause IntPortion to exceed X and cause the result to be outside the expected range.
+		// For example Fmod(55.8, 9.3) would result in a very small negative value!
+		if (fabsf(IntPortion) > fabsf(X))
+		{
+			IntPortion = X;
+		}
+
+		const float Result = X - IntPortion;
+		return Result;
+	}
+
+float NormalizeAxis( float Angle )
+{
+	// returns Angle in the range [0,360)
+	Angle = ClampAxis(Angle);
+
+	if (Angle > 180.f)
+	{
+		// shift to (-180,180]
+		Angle -= 360.f;
+	}
+
+	return Angle;
 }
 
 static void tap_cb(unsigned char direction, unsigned char count)
