@@ -1686,4 +1686,5 @@ int init_device(){
         return -14;
     }
     
+    return 0;
 }
