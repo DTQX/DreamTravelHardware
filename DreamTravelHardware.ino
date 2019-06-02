@@ -80,7 +80,7 @@ void dmpDataReady() {
 void setup() {
     // 初始化Wire
     Wire.begin();
-    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    // Wire.setClock(100000); // 400kHz I2C clock. Comment this line if having compilation difficulties
     
 
     // TODO 加入连接协议
@@ -112,7 +112,7 @@ void setup() {
 
 void loop() {
     // if programming failed, don't try to do anything
-    if (!dmpReady) return;
+    // if (!dmpReady) return;
 
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
@@ -122,6 +122,7 @@ void loop() {
         selectMPU(mpuPins[i]);
        
         // 更新lastPacket
+        // updateOneLastPacket(0);
         updateOneLastPacket(i);
         // delay(15);
 
@@ -179,7 +180,7 @@ int updateOneLastPacket(int index){
     Serial.print(q.y);
     Serial.print("  ");
     Serial.print(q.z);
-    Serial.print("  ");
+    Serial.println("  ");
 
     if(index == 4){
         Serial.println();
@@ -208,7 +209,7 @@ int updateOneLastPacket(int index){
     lastPacket[index * MPU_DATA_SIZE + 6] = fifoBuffer[12];
     lastPacket[index * MPU_DATA_SIZE + 7] = fifoBuffer[13];
 
-    return 1;
+    return 0;
 }
 
 // 发送一个 完整的数据
@@ -240,13 +241,16 @@ void sendOneData(){
 
 // 选中mpu
 void selectMPU(int mpuPin){
+    delay(50);
     digitalWrite(mpuPin, LOW);
-    // delay(50);
+    delay(50);
 }
 
 // 取消选中mpu
 void unselectMPU(int mpuPin){
+    delay(50);
     digitalWrite(mpuPin, HIGH);
+    delay(50);
     //delay(500);
 }
 
@@ -283,10 +287,9 @@ void initDevice(){
     for(int i = 0; i< MPU_NUM; i++){
         // 选中mpu
         selectMPU(mpuPins[i]);
-        delay(20);
-
         
         Serial.print(mpuPins[i]);
+        // Serial.print(mpuPins[0]);
         Serial.print("---");
         result = init_device();
         if(result){
@@ -300,5 +303,6 @@ void initDevice(){
 
         // 取消选中mpu
         unselectMPU(mpuPins[i]); 
+
     }
 }

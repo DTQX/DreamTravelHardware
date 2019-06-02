@@ -3357,10 +3357,10 @@ int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
         return -3;
     fifo_count = (tmp[0] << 8) | tmp[1];
     if (fifo_count < length) {
-        Serial.print("fifo_count:");
-        Serial.println(fifo_count);
-        Serial.print("length:");
-        Serial.println(length);
+        // Serial.print("fifo_count:");
+        // Serial.println(fifo_count);
+        // Serial.print("length:");
+        // Serial.println(length);
         // more[0] = 0;
         return -4;
     }
