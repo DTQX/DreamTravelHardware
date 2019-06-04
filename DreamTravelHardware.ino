@@ -18,7 +18,7 @@
 #include "Wire.h"
 
 // 开启调试
- #define DEBUG
+//  #define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
@@ -29,7 +29,7 @@
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 10;    // 数据发送间隔时间，单位ms
-uint8_t lastPacket[MPU_NUM * MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
+uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
 double QUAT_SENS  = 16384.0;   // 对应 MPU_DATA_SIZE 8 
@@ -80,7 +80,7 @@ void dmpDataReady() {
 void setup() {
     // 初始化Wire
     Wire.begin();
-    // Wire.setClock(100000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
     
 
     // TODO 加入连接协议
@@ -123,9 +123,14 @@ void loop() {
        
         // 更新lastPacket
         // updateOneLastPacket(0);
+        // Serial.println(mpuPins[i]);
+        // Serial.println(millis());
         updateOneLastPacket(i);
+        // Serial.println(mpuPins[i]);
+        // Serial.println(millis());
         // delay(15);
-
+        // 发送一个mpu的数据包
+        sendOneData(i);
         // 取消选中mpu
         unselectMPU(mpuPins[i]);
 
@@ -134,8 +139,8 @@ void loop() {
 
     }
 
-    // 发送一个完整的数据包
-    sendOneData();
+    // Serial.println();
+    // Serial.println(millis());
 }
 
 // 更新一个 mpu 的lastPacket
@@ -143,6 +148,9 @@ int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
     // Serial.print("-----");
     // Serial.println(millis());
+    if(index == 2){
+        return -3;
+    }
 
     int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     
@@ -152,18 +160,18 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(result);
         return -1;
     }
-    long quat[4];
-    quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
-    quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
-    quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
-    quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
-    q.w = quat[0] / QUAT_SENS;
-    q.x = quat[1] / QUAT_SENS;
-    q.y = quat[2] / QUAT_SENS;
-    q.z = quat[3] / QUAT_SENS;
-    dmpGetEuler(euler, &q);
+    // long quat[4];
+    // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
+    // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
+    // quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
+    // quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
+    // q.w = quat[0] / QUAT_SENS;
+    // q.x = quat[1] / QUAT_SENS;
+    // q.y = quat[2] / QUAT_SENS;
+    // q.z = quat[3] / QUAT_SENS;
+    // dmpGetEuler(euler, &q);
 
-    Serial.print(index);
+    // Serial.print(index);
     // Serial.print(" --- euler:\t");
     // Serial.print(euler[0] * 180/M_PI);
     // Serial.print("\t");
@@ -171,20 +179,20 @@ int updateOneLastPacket(int index){
     // Serial.print("\t");
     // Serial.println(euler[2] * 180/M_PI);
 
-    Serial.print(" --- Quat :");
+    // Serial.print(" --- Quat :");
     
-    Serial.print(q.w);
-    Serial.print("  ");
-    Serial.print(q.x);
-    Serial.print("  ");
-    Serial.print(q.y);
-    Serial.print("  ");
-    Serial.print(q.z);
-    Serial.println("  ");
+    // Serial.print(q.w);
+    // Serial.print("  ");
+    // Serial.print(q.x);
+    // Serial.print("  ");
+    // Serial.print(q.y);
+    // Serial.print("  ");
+    // Serial.print(q.z);
+    // Serial.print("  ");
 
-    if(index == 4){
-        Serial.println();
-    }
+    // if(index == 5){
+    //     Serial.println();
+    // }
 
     // Serial.print("origin Quat :");
     
@@ -200,57 +208,64 @@ int updateOneLastPacket(int index){
 
     // mpu数据填充到 lastPacket
     // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
-    lastPacket[index * MPU_DATA_SIZE + 0] = fifoBuffer[0];
-    lastPacket[index * MPU_DATA_SIZE + 1] = fifoBuffer[1];
-    lastPacket[index * MPU_DATA_SIZE + 2] = fifoBuffer[4];
-    lastPacket[index * MPU_DATA_SIZE + 3] = fifoBuffer[5];
-    lastPacket[index * MPU_DATA_SIZE + 4] = fifoBuffer[8];
-    lastPacket[index * MPU_DATA_SIZE + 5] = fifoBuffer[9];
-    lastPacket[index * MPU_DATA_SIZE + 6] = fifoBuffer[12];
-    lastPacket[index * MPU_DATA_SIZE + 7] = fifoBuffer[13];
+    lastPacket[index][ 0] = fifoBuffer[0];
+    lastPacket[index][ 1] = fifoBuffer[1];
+    lastPacket[index][ 2] = fifoBuffer[4];
+    lastPacket[index][ 3] = fifoBuffer[5];
+    lastPacket[index][ 4] = fifoBuffer[8];
+    lastPacket[index][ 5] = fifoBuffer[9];
+    lastPacket[index][ 6] = fifoBuffer[12];
+    lastPacket[index][ 7] = fifoBuffer[13];
 
     return 0;
 }
 
-// 发送一个 完整的数据
-void sendOneData(){
+// 发送一个mpu的数据包
+void sendOneData(int index){
     //发送数据，如果是一个数据包的开始，则发送开始标志符
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 
     #ifdef DEBUG
-    // Serial.print(START_CODE_1);
-    // Serial.print(START_CODE_1);
+    Serial.print(START_CODE_1);
+    Serial.print(START_CODE_1);
 
-    // for(int j = 0; j < MPU_NUM * MPU_DATA_SIZE; j++){
-    //     Serial.print(lastPacket[j]);
-    // }
+    for(int j = 0; j < MPU_NUM; j++){
+        Serial.print(lastPacket[index][j]);
+    }
 
-    // Serial.print(START_CODE_2);
-    // Serial.println(START_CODE_2);
+    Serial.print(START_CODE_2);
+    Serial.println(START_CODE_2);
     #else
-    Serial.write(START_CODE_1);
-    Serial.write(START_CODE_1);
-
-    Serial.write(lastPacket, MPU_NUM * MPU_DATA_SIZE);
-
-    Serial.write(START_CODE_2);
-    Serial.write(START_CODE_2);
+    if(index == 0){
+        Serial.write(START_CODE_1);
+        Serial.write(START_CODE_1);
+    }
+    
+    for(int i = 0; i < MPU_DATA_SIZE; i++){
+        Serial.write(lastPacket[index][i]);
+    }
+    
+    if(index == MPU_NUM -1){
+        Serial.write(START_CODE_2);
+        Serial.write(START_CODE_2);
+    }
+    
 
     #endif
 }
 
 // 选中mpu
 void selectMPU(int mpuPin){
-    delay(50);
+    // delay(50);
     digitalWrite(mpuPin, LOW);
-    delay(50);
+    // delay(50);
 }
 
 // 取消选中mpu
 void unselectMPU(int mpuPin){
-    delay(50);
+    // delay(50);
     digitalWrite(mpuPin, HIGH);
-    delay(50);
+    // delay(50);
     //delay(500);
 }
 
@@ -265,6 +280,9 @@ void initMpuPins(){
     for(int i = 0; i<MPU_NUM; i++){
         digitalWrite(mpuPins[i], HIGH); 
     }
+
+        // digitalWrite(37, HIGH); 
+
 }
 
 
