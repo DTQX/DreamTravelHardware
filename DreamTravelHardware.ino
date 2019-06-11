@@ -236,19 +236,19 @@ void sendOneData(int index){
     Serial.print(START_CODE_2);
     Serial.println(START_CODE_2);
     #else
-    if(index == 0){
-        Serial.write(START_CODE_1);
-        Serial.write(START_CODE_1);
-    }
+    // if(index == 0){
+    //     Serial.write(START_CODE_1);
+    //     Serial.write(START_CODE_1);
+    // }
     
-    for(int i = 0; i < MPU_DATA_SIZE; i++){
-        Serial.write(lastPacket[index][i]);
-    }
+    // for(int i = 0; i < MPU_DATA_SIZE; i++){
+    //     Serial.write(lastPacket[index][i]);
+    // }
     
-    if(index == MPU_NUM -1){
-        Serial.write(START_CODE_2);
-        Serial.write(START_CODE_2);
-    }
+    // if(index == MPU_NUM -1){
+    //     Serial.write(START_CODE_2);
+    //     Serial.write(START_CODE_2);
+    // }
     
 
     #endif

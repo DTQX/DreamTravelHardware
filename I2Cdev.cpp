@@ -641,6 +641,10 @@ bool I2Cdev::writeBytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_
         Serial.print(". Done. status:");
         Serial.println(status);
     #endif
+    if(status){
+        Serial.print("I2C write status:");
+        Serial.println(status);
+    }
     return status;
 }
 
