@@ -2909,6 +2909,8 @@ int mpu_set_dmp_state(unsigned char enable)
         }
         // /* Disable bypass mode. */
         
+        // 不启用i2c_master mode， 因为mpu没有使用外设，此时启用会导致主i2c总线读取出错，
+        // 个人理解是因为mpu内部如果没有禁用master mode，内部会去读取AUX_DA,AUX_CL导致出错
         // result = mpu_set_bypass(0);
         // if(result){
         //     return -1;
