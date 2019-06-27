@@ -18,7 +18,7 @@
 #include "Wire.h"
 
 // 开启调试
-//  #define DEBUG
+ #define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
@@ -229,7 +229,7 @@ void sendOneData(int index){
     Serial.print(START_CODE_1);
     Serial.print(START_CODE_1);
 
-    for(int j = 0; j < MPU_NUM; j++){
+    for(int j = 0; j < MPU_DATA_SIZE; j++){
         Serial.print(lastPacket[index][j]);
     }
 
@@ -258,7 +258,7 @@ void sendOneData(int index){
 void selectMPU(int mpuPin){
     // delay(50);
     digitalWrite(mpuPin, LOW);
-    // delay(50);
+    delay(50);
 }
 
 // 取消选中mpu
