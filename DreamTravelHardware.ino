@@ -102,6 +102,7 @@ void setup() {
 
     // test
     
+    
     // Serial.print(readBit_c(44));
 }
 
