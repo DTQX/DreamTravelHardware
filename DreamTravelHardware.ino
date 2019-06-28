@@ -325,7 +325,7 @@ void initMpuPins(){
     for(int i = 0; i<MPU_NUM; i++){
         digitalWrite(mpuPins[i], HIGH); 
     }
-    // digitalWrite(22, LOW); 
+    digitalWrite(22, LOW); 
 }
 
 
