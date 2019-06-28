@@ -117,7 +117,7 @@ void loop() {
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
         // lastSendTime = millis();
-
+        Serial.println(mpuPins[i]);
         // 选中mpu
         selectMPU(mpuPins[i]);
        
@@ -148,9 +148,9 @@ int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
     // Serial.print("-----");
     // Serial.println(millis());
-    if(index == 2){
-        return -3;
-    }
+    // if(index == 2){
+    //     return -3;
+    // }
 
     int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     
