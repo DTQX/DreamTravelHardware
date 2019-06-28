@@ -226,15 +226,15 @@ void sendOneData(int index){
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 
     #ifdef DEBUG
-    Serial.print(START_CODE_1);
-    Serial.print(START_CODE_1);
+    // Serial.print(START_CODE_1);
+    // Serial.print(START_CODE_1);
 
-    for(int j = 0; j < MPU_DATA_SIZE; j++){
-        Serial.print(lastPacket[index][j]);
-    }
+    // for(int j = 0; j < MPU_DATA_SIZE; j++){
+    //     Serial.print(lastPacket[index][j]);
+    // }
 
-    Serial.print(START_CODE_2);
-    Serial.println(START_CODE_2);
+    // Serial.print(START_CODE_2);
+    // Serial.println(START_CODE_2);
     #else
     // if(index == 0){
     //     Serial.write(START_CODE_1);
@@ -263,7 +263,7 @@ void selectMPU(int mpuPin){
 // 取消选中mpu
 void unselectMPU(int mpuPin){
     digitalWrite(mpuPin, HIGH);
-    delay(1000);
+    // delay(1000);
 }
 
 // 初始化mpu pins
