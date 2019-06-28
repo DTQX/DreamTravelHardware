@@ -256,17 +256,14 @@ void sendOneData(int index){
 
 // 选中mpu
 void selectMPU(int mpuPin){
-    // delay(50);
     digitalWrite(mpuPin, LOW);
-    delay(50);
+    delay(1000);
 }
 
 // 取消选中mpu
 void unselectMPU(int mpuPin){
-    // delay(50);
     digitalWrite(mpuPin, HIGH);
-    // delay(50);
-    //delay(500);
+    delay(1000);
 }
 
 // 初始化mpu pins
@@ -280,9 +277,6 @@ void initMpuPins(){
     for(int i = 0; i<MPU_NUM; i++){
         digitalWrite(mpuPins[i], HIGH); 
     }
-
-        // digitalWrite(37, HIGH); 
-
 }
 
 
