@@ -14,8 +14,9 @@
 // #include "mpu6050.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
+#include "my_i2cdev.h"
 
-#include "Wire.h"
+// #include "Wire.h"
 
 // 开启调试
  #define DEBUG
@@ -79,8 +80,8 @@ void dmpDataReady() {
 
 void setup() {
     // 初始化Wire
-    Wire.begin();
-    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    // Wire.begin();
+    // Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
     
 
     // TODO 加入连接协议
@@ -93,8 +94,10 @@ void setup() {
     Serial.begin(COM_RATE);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
+    i2c_init_my();
+
     // initialize device
-    // initDevice();
+    initDevice();
     
 //     // 等待开始
 //     // Serial.println(F("\nSend any character to begin DMP programming: "));

@@ -27,9 +27,9 @@
 
 
 /* The following functions must be defined for this platform:
- * i2c_write(unsigned char slave_addr, unsigned char reg_addr,
+ * i2c_write_bytes(unsigned char slave_addr, unsigned char reg_addr,
  *      unsigned char length, unsigned char const *data)
- * i2c_read(unsigned char slave_addr, unsigned char reg_addr,
+ * i2c_read_bytes(unsigned char slave_addr, unsigned char reg_addr,
  *      unsigned char length, unsigned char *data)
  * delay_ms(unsigned long num_ms)
  * get_ms(unsigned long *count)
