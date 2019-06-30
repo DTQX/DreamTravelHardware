@@ -94,7 +94,7 @@ void setup() {
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
     // initialize device
-    initDevice();
+    // initDevice();
     
 //     // 等待开始
 //     // Serial.println(F("\nSend any character to begin DMP programming: "));
