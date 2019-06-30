@@ -117,7 +117,7 @@ void loop() {
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
         // lastSendTime = millis();
-        Serial.println(mpuPins[i]);
+        // Serial.println(mpuPins[i]);
         // 选中mpu
         selectMPU(mpuPins[i]);
        
@@ -257,7 +257,7 @@ void sendOneData(int index){
 // 选中mpu
 void selectMPU(int mpuPin){
     digitalWrite(mpuPin, LOW);
-    delay(1000);
+    // delay(1000);
 }
 
 // 取消选中mpu
