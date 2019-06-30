@@ -117,13 +117,14 @@ void setup() {
 void loop() {
     // if programming failed, don't try to do anything
     // if (!dmpReady) return;
-
+    Serial.println();
+    Serial.println(micros());
     for(int i = 0; i<MPU_NUM; i++){
         //  记录上一次发送时间
         // lastSendTime = millis();
         // Serial.println(mpuPins[i]);
         // 选中mpu
-        selectMPU(mpuPins[i]);
+        // selectMPU(mpuPins[i]);
        
         // 更新lastPacket
         // updateOneLastPacket(0);
@@ -134,15 +135,15 @@ void loop() {
         // Serial.println(millis());
         // delay(15);
         // 发送一个mpu的数据包
-        sendOneData(i);
+        // sendOneData(i);
         // 取消选中mpu
-        unselectMPU(mpuPins[i]);
+        // unselectMPU(mpuPins[i]);
 
         // 保证发送频率
         // while( millis() - lastSendTime < intervalTime);
 
     }
-
+    Serial.println(micros());
     // Serial.println();
     // Serial.println(millis());
 }
@@ -155,8 +156,9 @@ int updateOneLastPacket(int index){
     // if(index == 2){
     //     return -3;
     // }
-
+    
     int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    
     
     
     if(result){
@@ -164,15 +166,15 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(result);
         return -1;
     }
-    // long quat[4];
-    // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
-    // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
-    // quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
-    // quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
-    // q.w = quat[0] / QUAT_SENS;
-    // q.x = quat[1] / QUAT_SENS;
-    // q.y = quat[2] / QUAT_SENS;
-    // q.z = quat[3] / QUAT_SENS;
+    long quat[4];
+    quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
+    quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
+    quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
+    quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
+    q.w = quat[0] / QUAT_SENS;
+    q.x = quat[1] / QUAT_SENS;
+    q.y = quat[2] / QUAT_SENS;
+    q.z = quat[3] / QUAT_SENS;
     // dmpGetEuler(euler, &q);
 
     // Serial.print(index);
@@ -183,16 +185,16 @@ int updateOneLastPacket(int index){
     // Serial.print("\t");
     // Serial.println(euler[2] * 180/M_PI);
 
-    // Serial.print(" --- Quat :");
+    Serial.print(" --- Quat :");
     
-    // Serial.print(q.w);
-    // Serial.print("  ");
-    // Serial.print(q.x);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
-    // Serial.print(q.z);
-    // Serial.print("  ");
+    Serial.print(q.w);
+    Serial.print("  ");
+    Serial.print(q.x);
+    Serial.print("  ");
+    Serial.print(q.y);
+    Serial.print("  ");
+    Serial.print(q.z);
+    Serial.print("  ");
 
     // if(index == 5){
     //     Serial.println();
