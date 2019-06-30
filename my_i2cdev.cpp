@@ -93,6 +93,7 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
     return 0;
 }
 
+// 如果SCL为低电平，并不会直接返回，会一直等SCL变高
 // i2c初始化, 如果SCL为低电平直接返回false，返回true表示成功
 int8_t i2c_init_my(){
     return i2c_init();

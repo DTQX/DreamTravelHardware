@@ -359,6 +359,7 @@ bool i2c_init(void)
 }
 #endif
 
+// 如果SCL为低电平，并不会直接返回，会一直等SCL变高
 // Initiates a transfer to the slave device with the 8-bit I2C address addr. Note that this library uses the 8-bit addressing scheme different from the 7-bit scheme in the Wire library. In addition the least significant bit of addr must be specified as I2C_WRITE (=0) or I2C_READ (=1). Returns true if the addressed device replies with an ACK. Otherwise false is returned.
 bool  i2c_start(uint8_t addr)
 #if I2C_HARDWARE
