@@ -1,5 +1,5 @@
  
-/** mpu采样率 60Hz;  arduino数据发送频率 33.33Hz
+/** mpu采样率 Hz;  arduino数据发送频率 Hz
  *
  *  
  */
@@ -79,17 +79,12 @@ void dmpDataReady() {
 // // ================================================================
 
 void setup() {
-    // 初始化Wire
-    // Wire.begin();
-    // Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
-    
-
     // TODO 加入连接协议
 
     // initialize serial communication
     Serial.begin(COM_RATE);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
-
+    // 初始化i2c
     i2c_init_my();
 
     // initialize device
@@ -284,8 +279,9 @@ void initDevice(){
     dmp_init_struct();
     mpu_init_struct();
     int result = 0;
-    for(int i = 0; i< MPU_NUM; i++){
-        
+    for(int i = 0; i< I2C_NUM; i++){
+        // 访问第一个mpu
+        set_dev_addr(0x68);
         Serial.print(mpuPins[i]);
         // Serial.print(mpuPins[0]);
         Serial.print("---");

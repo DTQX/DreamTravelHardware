@@ -131,6 +131,6 @@ int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug);
 int mpu_register_tap_cb(void (*func)(unsigned char, unsigned char));
 
 int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data);
-
+void set_dev_addr(unsigned char addr);
 #endif  /* #ifndef _INV_MPU_H_ */
 

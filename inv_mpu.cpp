@@ -3389,3 +3389,12 @@ int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
     return 0;
 }
 
+/**
+ *  @brief    设置
+ *  This function should be used if the packet is to be parsed elsewhere.
+ *  @param[in]  length  Length of one FIFO packet.
+ *  @param[in]  data    FIFO packet.
+ */
+void set_dev_addr(unsigned char addr){
+    st.hw->addr = addr;
+}

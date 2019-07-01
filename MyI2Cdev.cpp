@@ -5,21 +5,20 @@
 
 #include "SoftI2C/SoftI2CMaster.h"
 
-// i2c总线数
-#define PORT_NUM 2
+
 // 当前i2c总线
 uint8_t currentPort = 0;
-bool (*i2c_init[PORT_NUM])(void)
+bool (*i2c_init[I2C_NUM])(void)
           = {i2c_init_pa01, i2c_init_pa23};
-bool (*i2c_start[PORT_NUM])(uint8_t addr)
+bool (*i2c_start[I2C_NUM])(uint8_t addr)
           = {i2c_start_pa01, i2c_start_pa23};
-bool (*i2c_rep_start[PORT_NUM])(uint8_t addr)
+bool (*i2c_rep_start[I2C_NUM])(uint8_t addr)
           = {i2c_rep_start_pa01, i2c_rep_start_pa23};
-uint8_t (*i2c_read[PORT_NUM])(bool last)
+uint8_t (*i2c_read[I2C_NUM])(bool last)
           = {i2c_read_pa01, i2c_read_pa23};
-bool (*i2c_write[PORT_NUM])(uint8_t value)
+bool (*i2c_write[I2C_NUM])(uint8_t value)
           = {i2c_write_pa01, i2c_write_pa23};
-void (*i2c_stop[PORT_NUM])(void)
+void (*i2c_stop[I2C_NUM])(void)
           = {i2c_stop_pa01, i2c_stop_pa23};
 
 // i2c 多字节写
@@ -94,7 +93,7 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
 
 // i2c初始化
 int8_t i2c_init_my(){
-    for(uint8_t i = 0; i < PORT_NUM; i++){
+    for(uint8_t i = 0; i < I2C_NUM; i++){
         // 如果SCL为低电平，并不会直接返回，会一直等SCL变高
         // i2c初始化, 如果SCL为低电平直接返回false，返回true表示成功
         i2c_init[currentPort]();
