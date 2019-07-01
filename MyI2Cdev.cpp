@@ -1,27 +1,26 @@
-#include "my_i2cdev.h"
+#include "MyI2Cdev.h"
 
-#define SCL_PIN 4
-#define SCL_PORT PORTE
-#define SDA_PIN 5
-#define SDA_PORT PORTE
 // #define I2C_NOINTERRUPT 1
 #define I2C_FASTMODE 1
 
-#include "SoftI2CMaster.h"
+#include "SoftI2C/SoftI2CMaster.h"
 
-
-// #ifdef __cplusplus 
-// extern "C" {
-// #endif
-
-// void delay_ms(unsigned long ms){
-//     return delay(ms);
-// }
-
-int get_ms(unsigned long *timestamp){
-    *timestamp = 0;
-    return 0;
-}
+// i2c总线数
+#define PORT_NUM 2
+// 当前i2c总线
+uint8_t currentPort = 0;
+bool (*i2c_init[PORT_NUM])(void)
+          = {i2c_init_pa01, i2c_init_pa23};
+bool (*i2c_start[PORT_NUM])(uint8_t addr)
+          = {i2c_start_pa01, i2c_start_pa23};
+bool (*i2c_rep_start[PORT_NUM])(uint8_t addr)
+          = {i2c_rep_start_pa01, i2c_rep_start_pa23};
+uint8_t (*i2c_read[PORT_NUM])(bool last)
+          = {i2c_read_pa01, i2c_read_pa23};
+bool (*i2c_write[PORT_NUM])(uint8_t value)
+          = {i2c_write_pa01, i2c_write_pa23};
+void (*i2c_stop[PORT_NUM])(void)
+          = {i2c_stop_pa01, i2c_stop_pa23};
 
 // i2c 多字节写
 uint8_t i2c_write_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
@@ -36,11 +35,11 @@ uint8_t i2c_write_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_
         Serial.print("...");
     #endif
     // 开始新的i2c连接，发送从机地址
-    if (!i2c_start(devAddr <<1 | I2C_WRITE)){
+    if (!i2c_start[currentPort](devAddr <<1 | I2C_WRITE)){
         return -1;
     }
     // 发送读取地址
-    if (!i2c_write(regAddr)){
+    if (!i2c_write[currentPort](regAddr)){
         return -2;
     }
     // 读取数据
@@ -49,10 +48,10 @@ uint8_t i2c_write_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_
             Serial.print(data[i], HEX);
             if (i + 1 < length) Serial.print(" ");
         #endif
-        i2c_write(data[i]);
+        i2c_write[currentPort](data[i]);
     }
     // 发送停止信号
-    i2c_stop();
+    i2c_stop[currentPort]();
     return 0;
 }
 // i2c 多字节读
@@ -68,37 +67,46 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
         Serial.print("...");
     #endif
     // 开始新的i2c连接，发送从机地址
-    if (!i2c_start(devAddr <<1 | I2C_WRITE)){
+    if (!i2c_start[currentPort](devAddr <<1 | I2C_WRITE)){
         return -1;
     }
     // 发送读取地址
-    i2c_write(regAddr);
+    i2c_write[currentPort](regAddr);
     // 发送停止信号
-    i2c_stop();
+    i2c_stop[currentPort]();
     // 开始新的i2c连接，读取数据
-    if (!i2c_rep_start((devAddr <<1 | I2C_READ))){
+    if (!i2c_rep_start[currentPort]((devAddr <<1 | I2C_READ))){
         return -2;
     }
     uint8_t cnt;
     for (cnt=0; cnt < length - 1; cnt++){
         // 读取数据
-        data[cnt] = i2c_read(false);
+        data[cnt] = i2c_read[currentPort](false);
         #ifdef I2CDEV_SERIAL_DEBUG
             Serial.print(data[cnt], HEX);
             if (cnt + 1 < length) Serial.print(" ");
         #endif
     }
-    data[cnt] = i2c_read(true);
-    i2c_stop();
+    data[cnt] = i2c_read[currentPort](true);
+    i2c_stop[currentPort]();
     return 0;
 }
 
-// 如果SCL为低电平，并不会直接返回，会一直等SCL变高
-// i2c初始化, 如果SCL为低电平直接返回false，返回true表示成功
+// i2c初始化
 int8_t i2c_init_my(){
-    return i2c_init();
+    for(uint8_t i = 0; i < PORT_NUM; i++){
+        // 如果SCL为低电平，并不会直接返回，会一直等SCL变高
+        // i2c初始化, 如果SCL为低电平直接返回false，返回true表示成功
+        i2c_init[currentPort]();
+    }
 }
 
-// #ifdef __cplusplus 
-// }
-// #endif
+// 设置当前i2c bus
+void setCurrentPort(uint8_t port){
+    currentPort = port;
+}
+
+int8_t get_ms(unsigned long *timestamp){
+    *timestamp = 0;
+    return 0;
+}

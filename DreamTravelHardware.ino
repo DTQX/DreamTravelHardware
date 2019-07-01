@@ -7,14 +7,14 @@
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 // #include "I2Cdev.h"
-#include "my_log.h"
+#include "myLog.h"
 #include "BonesMap.h"
 #include "helper_3dmath.h"
 
 // #include "mpu6050.h"
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
-#include "my_i2cdev.h"
+#include "MyI2Cdev.h"
 
 // #include "Wire.h"
 
@@ -86,10 +86,6 @@ void setup() {
 
     // TODO 加入连接协议
 
-
-    // 初始化mpu pins
-    initMpuPins();
-
     // initialize serial communication
     Serial.begin(COM_RATE);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
@@ -123,8 +119,6 @@ void loop() {
         //  记录上一次发送时间
         // lastSendTime = millis();
         // Serial.println(mpuPins[i]);
-        // 选中mpu
-        // selectMPU(mpuPins[i]);
        
         // 更新lastPacket
         // updateOneLastPacket(0);
@@ -166,15 +160,15 @@ int updateOneLastPacket(int index){
         DEBUG_PRINTLN(result);
         return -1;
     }
-    long quat[4];
-    quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
-    quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
-    quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
-    quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
-    q.w = quat[0] / QUAT_SENS;
-    q.x = quat[1] / QUAT_SENS;
-    q.y = quat[2] / QUAT_SENS;
-    q.z = quat[3] / QUAT_SENS;
+    // long quat[4];
+    // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
+    // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
+    // quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
+    // quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
+    // q.w = quat[0] / QUAT_SENS;
+    // q.x = quat[1] / QUAT_SENS;
+    // q.y = quat[2] / QUAT_SENS;
+    // q.z = quat[3] / QUAT_SENS;
     // dmpGetEuler(euler, &q);
 
     // Serial.print(index);
@@ -185,16 +179,16 @@ int updateOneLastPacket(int index){
     // Serial.print("\t");
     // Serial.println(euler[2] * 180/M_PI);
 
-    Serial.print(" --- Quat :");
+    // Serial.print(" --- Quat :");
     
-    Serial.print(q.w);
-    Serial.print("  ");
-    Serial.print(q.x);
-    Serial.print("  ");
-    Serial.print(q.y);
-    Serial.print("  ");
-    Serial.print(q.z);
-    Serial.print("  ");
+    // Serial.print(q.w);
+    // Serial.print("  ");
+    // Serial.print(q.x);
+    // Serial.print("  ");
+    // Serial.print(q.y);
+    // Serial.print("  ");
+    // Serial.print(q.z);
+    // Serial.print("  ");
 
     // if(index == 5){
     //     Serial.println();
@@ -260,18 +254,6 @@ void sendOneData(int index){
     #endif
 }
 
-// 选中mpu
-void selectMPU(int mpuPin){
-    digitalWrite(mpuPin, LOW);
-    // delay(1000);
-}
-
-// 取消选中mpu
-void unselectMPU(int mpuPin){
-    digitalWrite(mpuPin, HIGH);
-    // delay(1000);
-}
-
 // 初始化mpu pins
 void initMpuPins(){
     //设置所有的mpu引脚为输出引脚
@@ -303,8 +285,6 @@ void initDevice(){
     mpu_init_struct();
     int result = 0;
     for(int i = 0; i< MPU_NUM; i++){
-        // 选中mpu
-        selectMPU(mpuPins[i]);
         
         Serial.print(mpuPins[i]);
         // Serial.print(mpuPins[0]);
@@ -318,9 +298,6 @@ void initDevice(){
         {
             Serial.println("success");
         }
-
-        // 取消选中mpu
-        unselectMPU(mpuPins[i]); 
 
     }
 }

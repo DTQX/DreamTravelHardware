@@ -34,7 +34,7 @@
  * delay_ms(unsigned long num_ms)
  * get_ms(unsigned long *count)
  */
-#include "my_i2cdev.h"
+#include "MyI2Cdev.h"
 
 
 

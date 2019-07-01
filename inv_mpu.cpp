@@ -37,7 +37,7 @@
  * fabsf(float x)
  * min(int a, int b)
  */
-#include "my_i2cdev.h"
+#include "MyI2Cdev.h"
 
 /* Time for some messy macro work. =]
  * #define MPU9150
