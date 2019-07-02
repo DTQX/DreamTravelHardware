@@ -44,10 +44,10 @@ double QUAT_SENS  = 16384.0;   // 对应 MPU_DATA_SIZE 8
 bool dmpReady = true;  // set true if DMP init was successful
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
-uint16_t packetSize;    // expected DMP packet size (default is 42 bytes) mpu产生的数据大小
+uint8_t packetSize;    // expected DMP packet size  dmp产生的数据大小
 uint16_t fifoCount;     // count of all bytes currently in FIFO
-uint16_t maxFifoCount = 1024;
-uint8_t fifoBuffer[64]; // FIFO storage buffer
+// uint16_t maxFifoCount = 1024;
+uint8_t fifoBuffer[32]; // FIFO storage buffer
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -84,8 +84,7 @@ void setup() {
     // initialize serial communication
     Serial.begin(COM_RATE);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
-    // 初始化i2c
-    i2c_init_my();
+    
 
     // initialize device
     initDevice();
@@ -108,21 +107,12 @@ void setup() {
 void loop() {
     // if programming failed, don't try to do anything
     // if (!dmpReady) return;
-    Serial.println();
-    Serial.println(micros());
-    for(int i = 0; i<MPU_NUM; i++){
-        //  记录上一次发送时间
-        // lastSendTime = millis();
-        // Serial.println(mpuPins[i]);
+    // Serial.println();
+    // Serial.println(micros());
+    for(int i = 0; i<I2C_NUM; i++){
        
         // 更新lastPacket
-        // updateOneLastPacket(0);
-        // Serial.println(mpuPins[i]);
-        // Serial.println(millis());
         updateOneLastPacket(i);
-        // Serial.println(mpuPins[i]);
-        // Serial.println(millis());
-        // delay(15);
         // 发送一个mpu的数据包
         // sendOneData(i);
         // 取消选中mpu
@@ -132,29 +122,30 @@ void loop() {
         // while( millis() - lastSendTime < intervalTime);
 
     }
-    Serial.println(micros());
+    // Serial.println(micros());
     // Serial.println();
     // Serial.println(millis());
 }
 
 // 更新一个 mpu 的lastPacket
 int updateOneLastPacket(int index){
-    // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
-    // Serial.print("-----");
-    // Serial.println(millis());
-    // if(index == 2){
-    //     return -3;
-    // }
     
-    int result = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
-    
-    
-    
-    if(result){
+    if(mpu_read_latest_fifo_stream(packetSize, fifoBuffer)){
         DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
         DEBUG_PRINTLN(result);
         return -1;
     }
+    // mpu数据填充到 lastPacket
+    // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
+    lastPacket[index][0] = fifoBuffer[0];
+    lastPacket[index][1] = fifoBuffer[1];
+    lastPacket[index][2] = fifoBuffer[4];
+    lastPacket[index][3] = fifoBuffer[5];
+    lastPacket[index][4] = fifoBuffer[8];
+    lastPacket[index][5] = fifoBuffer[9];
+    lastPacket[index][6] = fifoBuffer[12];
+    lastPacket[index][7] = fifoBuffer[13];
+
     // long quat[4];
     // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
     // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
@@ -201,16 +192,7 @@ int updateOneLastPacket(int index){
     // Serial.print("  ");
     
 
-    // mpu数据填充到 lastPacket
-    // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
-    lastPacket[index][ 0] = fifoBuffer[0];
-    lastPacket[index][ 1] = fifoBuffer[1];
-    lastPacket[index][ 2] = fifoBuffer[4];
-    lastPacket[index][ 3] = fifoBuffer[5];
-    lastPacket[index][ 4] = fifoBuffer[8];
-    lastPacket[index][ 5] = fifoBuffer[9];
-    lastPacket[index][ 6] = fifoBuffer[12];
-    lastPacket[index][ 7] = fifoBuffer[13];
+    
 
     return 0;
 }
@@ -275,25 +257,26 @@ uint8_t dmpGetEuler(float *data, Quaternion * q) {
 
 // initialize device
 void initDevice(){
+    // 初始化i2c
+    i2c_init_my();
+
     Serial.println(F("Initializing I2C devices..."));
+    // 初始化mpu数据结构
     dmp_init_struct();
     mpu_init_struct();
-    int result = 0;
     for(int i = 0; i< I2C_NUM; i++){
         // 访问第一个mpu
         set_dev_addr(0x68);
-        Serial.print(mpuPins[i]);
-        // Serial.print(mpuPins[0]);
-        Serial.print("---");
-        result = init_device();
-        if(result){
-            Serial.print("error:");
-            Serial.println(result);
-
-        }else
-        {
-            Serial.println("success");
-        }
-
+        Serial.print(i);
+        Serial.print("---0x68:");
+        Serial.println(init_device());
+        
+        // 访问第一个mpu
+        set_dev_addr(0x69);
+        Serial.print(i);
+        Serial.print("---0x69:");
+        Serial.println(init_device());
     }
+
+    packetSize = dmp_get_packet_length();
 }
