@@ -29,7 +29,7 @@
 const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t CODE_LENGTH = 2;   // 标志符长度
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
-const int intervalTime = 10;    // 数据发送间隔时间，单位ms
+const uint8_t intervalTime = 10;    // 数据发送间隔时间，单位ms
 const uint16_t PACKET_BUFFER_LENGTH = MPU_NUM * MPU_DATA_SIZE + 2 * CODE_LENGTH    //  TODO 替换成数字 ， 完整数据包的长度
 uint8_t lastPacket[PACKET_BUFFER_LENGTH] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
@@ -97,7 +97,10 @@ void loop() {
     // if (!dmpReady) return;
     // Serial.println();
     // Serial.println(micros());
-    for(int i = 0; i < I2C_NUM; i++){
+    for(uint8_t i = 0; i < I2C_NUM; i++){
+        // 设置当前端口 
+        setCurrentPort(i);
+
         set_dev_addr(0x68);
         // 更新lastPacket
         updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
@@ -105,9 +108,6 @@ void loop() {
         set_dev_addr(0x69);
         // 更新lastPacket
         updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
-
-        
-
     }
     // 发送一个完整数据包
     sendData();
@@ -121,7 +121,7 @@ void loop() {
 }
 
 // 更新一个 mpu 的lastPacket
-int updateOneLastPacket(int startIndex){
+uint8_t updateOneLastPacket(uint16_t startIndex){
     if(mpu_read_latest_fifo_stream(packetSize, fifoBuffer)){
         DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
         DEBUG_PRINTLN(result);
@@ -144,12 +144,12 @@ int updateOneLastPacket(int startIndex){
 }
 
 // 发送一个完整数据包
-void sendData(int index){
+void sendData(uint8_t index){
     // 发送一个完整数据包
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 
     #ifdef DEBUG
-    for(int j = 0; j < PACKET_BUFFER_LENGTH; j++){
+    for(uint8_t j = 0; j < PACKET_BUFFER_LENGTH; j++){
         Serial.print(lastPacket[j]);
     }
     Serial.println();
@@ -161,12 +161,12 @@ void sendData(int index){
 // 初始化mpu pins
 void initMpuPins(){
     //设置所有的mpu引脚为输出引脚
-    for(int i = 0; i<MPU_NUM; i++){
+    for(uint8_t i = 0; i<MPU_NUM; i++){
         pinMode(mpuPins[i], OUTPUT); 
     }
 
     //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
-    for(int i = 0; i<MPU_NUM; i++){
+    for(uint8_t i = 0; i<MPU_NUM; i++){
         digitalWrite(mpuPins[i], HIGH); 
     }
 }
@@ -180,14 +180,17 @@ void initDevice(){
     // 初始化mpu数据结构
     dmp_init_struct();
     mpu_init_struct();
-    for(int i = 0; i< I2C_NUM; i++){
+    for(uint8_t i = 0; i< I2C_NUM; i++){
+        // 设置当前端口 
+        setCurrentPort(i);
+
         // 访问第一个mpu
         set_dev_addr(0x68);
         Serial.print(i);
         Serial.print("---0x68:");
         Serial.println(init_device());
         
-        // 访问第一个mpu
+        // 访问第二个mpu
         set_dev_addr(0x69);
         Serial.print(i);
         Serial.print("---0x69:");

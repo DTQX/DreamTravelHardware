@@ -3347,7 +3347,7 @@ lp_int_restore:
  *  @param[in]  length  Length of one FIFO packet.
  *  @param[in]  data    FIFO packet.
  */
-int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
+char mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
     unsigned char tmp[2];
     unsigned short fifo_count;
     if (!st.chip_cfg.dmp_on)
@@ -3384,8 +3384,6 @@ int mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
         fifo_count -= length;
     }
     
-    
-    // more[0] = fifo_count / length - 1;
     return 0;
 }
 
