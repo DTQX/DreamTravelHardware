@@ -3,7 +3,6 @@
  *
  *  
  */
-                  
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 // #include "I2Cdev.h"
@@ -28,17 +27,14 @@
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 // #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
 const uint8_t START_CODE_1=88;   // 数据包开始标志
+const uint8_t CODE_LENGTH = 2;   // 标志符长度
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const int intervalTime = 10;    // 数据发送间隔时间，单位ms
-uint8_t lastPacket[MPU_NUM][MPU_DATA_SIZE] = {0};     //储存上一次正确的quat
+const uint16_t PACKET_BUFFER_LENGTH = MPU_NUM * MPU_DATA_SIZE + 2 * CODE_LENGTH    //  TODO 替换成数字 ， 完整数据包的长度
+uint8_t lastPacket[PACKET_BUFFER_LENGTH] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
 double QUAT_SENS  = 16384.0;   // 对应 MPU_DATA_SIZE 8 
-
-// class default I2C address is 0x68
-// specific I2C addresses may be passed as a parameter here
-// AD0 low = 0x68 (default for SparkFun breakout and InvenSense evaluation board)
-// AD0 high = 0x69
 
 // MPU control/status vars
 bool dmpReady = true;  // set true if DMP init was successful
@@ -46,7 +42,6 @@ uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
 uint8_t packetSize;    // expected DMP packet size  dmp产生的数据大小
 uint16_t fifoCount;     // count of all bytes currently in FIFO
-// uint16_t maxFifoCount = 1024;
 uint8_t fifoBuffer[32]; // FIFO storage buffer
 
 // orientation/motion vars
@@ -57,11 +52,6 @@ VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measure
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-
-// packet structure for InvenSense teapot demo
-// uint8_t teapotPacket[14] = { '$', 0x02, 0,0, 0,0, 0,0, 0,0, 0x00, 0x00, '\r', '\n' };
-
-
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -77,11 +67,15 @@ void setup() {
 
     // initialize serial communication
     Serial.begin(COM_RATE);
-    while (!Serial); // wait for Leonardo enumeration, others continue immediately
-    
 
     // initialize device
     initDevice();
+
+    // 设置开始、结束标志符
+    lastPacket[0] = START_CODE_1;
+    lastPacket[1] = START_CODE_1;
+    lastPacket[PACKET_BUFFER_LENGTH -2] = START_CODE_2;
+    lastPacket[PACKET_BUFFER_LENGTH -1] = START_CODE_2;
     
 //     // 等待开始
 //     // Serial.println(F("\nSend any character to begin DMP programming: "));
@@ -103,43 +97,118 @@ void loop() {
     // if (!dmpReady) return;
     // Serial.println();
     // Serial.println(micros());
-    for(int i = 0; i<I2C_NUM; i++){
-       
+    for(int i = 0; i < I2C_NUM; i++){
+        set_dev_addr(0x68);
         // 更新lastPacket
-        updateOneLastPacket(i);
-        // 发送一个mpu的数据包
-        // sendOneData(i);
-        // 取消选中mpu
-        // unselectMPU(mpuPins[i]);
+        updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
 
-        // 保证发送频率
-        // while( millis() - lastSendTime < intervalTime);
+        set_dev_addr(0x69);
+        // 更新lastPacket
+        updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
+
+        
 
     }
+    // 发送一个完整数据包
+    sendData();
+
+    // 保证发送频率
+    // while( millis() - lastSendTime < intervalTime);
+
     // Serial.println(micros());
     // Serial.println();
     // Serial.println(millis());
 }
 
 // 更新一个 mpu 的lastPacket
-int updateOneLastPacket(int index){
-    
+int updateOneLastPacket(int startIndex){
     if(mpu_read_latest_fifo_stream(packetSize, fifoBuffer)){
         DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
         DEBUG_PRINTLN(result);
         return -1;
     }
     // mpu数据填充到 lastPacket
-    // memcpy(lastPacket + index * MPU_DATA_SIZE, fifoBuffer, MPU_DATA_SIZE * sizeof(uint8_t));
-    lastPacket[index][0] = fifoBuffer[0];
-    lastPacket[index][1] = fifoBuffer[1];
-    lastPacket[index][2] = fifoBuffer[4];
-    lastPacket[index][3] = fifoBuffer[5];
-    lastPacket[index][4] = fifoBuffer[8];
-    lastPacket[index][5] = fifoBuffer[9];
-    lastPacket[index][6] = fifoBuffer[12];
-    lastPacket[index][7] = fifoBuffer[13];
+    
+    lastPacket[startIndex] = fifoBuffer[0];
+    lastPacket[startIndex + 1] = fifoBuffer[1];
+    lastPacket[startIndex + 2] = fifoBuffer[4];
+    lastPacket[startIndex + 3] = fifoBuffer[5];
+    lastPacket[startIndex + 4] = fifoBuffer[8];
+    lastPacket[startIndex + 5] = fifoBuffer[9];
+    lastPacket[startIndex + 6] = fifoBuffer[12];
+    lastPacket[startIndex + 7] = fifoBuffer[13];
 
+    // formateOutput();
+
+    return 0;
+}
+
+// 发送一个完整数据包
+void sendData(int index){
+    // 发送一个完整数据包
+    // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
+
+    #ifdef DEBUG
+    for(int j = 0; j < PACKET_BUFFER_LENGTH; j++){
+        Serial.print(lastPacket[j]);
+    }
+    Serial.println();
+    #else
+    Serial.write(lastPacket, PACKET_BUFFER_LENGTH);
+    #endif
+}
+
+// 初始化mpu pins
+void initMpuPins(){
+    //设置所有的mpu引脚为输出引脚
+    for(int i = 0; i<MPU_NUM; i++){
+        pinMode(mpuPins[i], OUTPUT); 
+    }
+
+    //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
+    for(int i = 0; i<MPU_NUM; i++){
+        digitalWrite(mpuPins[i], HIGH); 
+    }
+}
+
+// initialize device
+void initDevice(){
+    // 初始化i2c
+    i2c_init_my();
+
+    Serial.println(F("Initializing I2C devices..."));
+    // 初始化mpu数据结构
+    dmp_init_struct();
+    mpu_init_struct();
+    for(int i = 0; i< I2C_NUM; i++){
+        // 访问第一个mpu
+        set_dev_addr(0x68);
+        Serial.print(i);
+        Serial.print("---0x68:");
+        Serial.println(init_device());
+        
+        // 访问第一个mpu
+        set_dev_addr(0x69);
+        Serial.print(i);
+        Serial.print("---0x69:");
+        Serial.println(init_device());
+    }
+
+    // 获取dmp数据包大小
+    packetSize = dmp_get_packet_length();
+}
+
+// 获取euler
+uint8_t dmpGetEuler(float *data, Quaternion * q) {
+    data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
+    data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
+    data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
+
+    return 0;
+}
+
+// 格式化输出，用于调试
+void formateOutput(){
     // long quat[4];
     // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
     // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
@@ -185,93 +254,4 @@ int updateOneLastPacket(int index){
     // Serial.print(quat[3] );
     // Serial.print("  ");
     
-
-    
-
-    return 0;
-}
-
-// 发送一个mpu的数据包
-void sendOneData(int index){
-    //发送数据，如果是一个数据包的开始，则发送开始标志符
-    // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
-
-    #ifdef DEBUG
-    // Serial.print(START_CODE_1);
-    // Serial.print(START_CODE_1);
-
-    // for(int j = 0; j < MPU_DATA_SIZE; j++){
-    //     Serial.print(lastPacket[index][j]);
-    // }
-
-    // Serial.print(START_CODE_2);
-    // Serial.println(START_CODE_2);
-    #else
-    // if(index == 0){
-    //     Serial.write(START_CODE_1);
-    //     Serial.write(START_CODE_1);
-    // }
-    
-    // for(int i = 0; i < MPU_DATA_SIZE; i++){
-    //     Serial.write(lastPacket[index][i]);
-    // }
-    
-    // if(index == MPU_NUM -1){
-    //     Serial.write(START_CODE_2);
-    //     Serial.write(START_CODE_2);
-    // }
-    
-
-    #endif
-}
-
-// 初始化mpu pins
-void initMpuPins(){
-    //设置所有的mpu引脚为输出引脚
-    for(int i = 0; i<MPU_NUM; i++){
-        pinMode(mpuPins[i], OUTPUT); 
-    }
-
-    //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
-    for(int i = 0; i<MPU_NUM; i++){
-        digitalWrite(mpuPins[i], HIGH); 
-    }
-}
-
-
-uint8_t dmpGetEuler(float *data, Quaternion * q) {
-    data[0] = atan2(2*q -> x*q -> y - 2*q -> w*q -> z, 2*q -> w*q -> w + 2*q -> x*q -> x - 1);   // psi
-    data[1] = -asin(2*q -> x*q -> z + 2*q -> w*q -> y);                              // theta
-    data[2] = atan2(2*q -> y*q -> z - 2*q -> w*q -> x, 2*q -> w*q -> w + 2*q -> z*q -> z - 1);   // phi
-
-    return 0;
-}
-
-
-
-// initialize device
-void initDevice(){
-    // 初始化i2c
-    i2c_init_my();
-
-    Serial.println(F("Initializing I2C devices..."));
-    // 初始化mpu数据结构
-    dmp_init_struct();
-    mpu_init_struct();
-    for(int i = 0; i< I2C_NUM; i++){
-        // 访问第一个mpu
-        set_dev_addr(0x68);
-        Serial.print(i);
-        Serial.print("---0x68:");
-        Serial.println(init_device());
-        
-        // 访问第一个mpu
-        set_dev_addr(0x69);
-        Serial.print(i);
-        Serial.print("---0x69:");
-        Serial.println(init_device());
-    }
-
-    // 获取dmp数据包大小
-    packetSize = dmp_get_packet_length();
 }
