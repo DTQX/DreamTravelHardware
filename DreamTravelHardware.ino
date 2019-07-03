@@ -67,12 +67,6 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================
 
-volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
-void dmpDataReady() {
-    mpuInterrupt = true;
-}
-
-
 
 // // ================================================================
 // // ===                      INITIAL SETUP                       ===
@@ -278,5 +272,6 @@ void initDevice(){
         Serial.println(init_device());
     }
 
+    // 获取dmp数据包大小
     packetSize = dmp_get_packet_length();
 }
