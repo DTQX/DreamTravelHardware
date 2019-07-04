@@ -1,7 +1,7 @@
-#define SCL_PIN_PC67 0
-#define SCL_PORT_PC67 PORTA
-#define SDA_PIN_PC67 1
-#define SDA_PORT_PC67 PORTA
+#define SCL_PIN_PC67 6
+#define SCL_PORT_PC67 PORTC
+#define SDA_PIN_PC67 7
+#define SDA_PORT_PC67 PORTC
 
 // Init function. Needs to be called once in the beginning.
 // Returns false if SDA or SCL are low, which probably means 

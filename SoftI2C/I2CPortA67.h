@@ -1,6 +1,6 @@
-#define SCL_PIN_PA67 4
+#define SCL_PIN_PA67 6
 #define SCL_PORT_PA67 PORTA
-#define SDA_PIN_PA67 5
+#define SDA_PIN_PA67 7
 #define SDA_PORT_PA67 PORTA
 
 // Init function. Needs to be called once in the beginning.
