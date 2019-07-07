@@ -30,7 +30,7 @@ const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t CODE_LENGTH = 2;   // 标志符长度
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const uint8_t intervalTime = 10;    // 数据发送间隔时间，单位ms
-const uint16_t PACKET_BUFFER_LENGTH = MPU_NUM * MPU_DATA_SIZE + 2 * CODE_LENGTH    //  TODO 替换成数字 ， 完整数据包的长度，包括标志符
+const uint16_t PACKET_BUFFER_LENGTH = (I2C_NUM * 2) * MPU_DATA_SIZE + 2 * CODE_LENGTH ;   //  TODO 替换成数字 ， 完整数据包的长度，包括标志符
 uint8_t lastPacket[PACKET_BUFFER_LENGTH] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
@@ -144,7 +144,7 @@ uint8_t updateOneLastPacket(uint16_t startIndex){
 }
 
 // 发送一个完整数据包
-void sendData(uint8_t index){
+void sendData(){
     // 发送一个完整数据包
     // 不管发生什么，都要发送每个mpu的数据，如果mpu出错则发送上一次正确的数据
 

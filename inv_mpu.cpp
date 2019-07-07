@@ -235,7 +235,7 @@ struct test_s {
 /* Gyro driver state variables. */
 struct gyro_state_s {
     const struct gyro_reg_s *reg;
-    const struct hw_s *hw;
+    struct hw_s *hw;
     struct chip_cfg_s chip_cfg;
     const struct test_s *test;
 };

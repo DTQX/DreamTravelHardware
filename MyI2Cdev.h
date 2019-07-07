@@ -1,7 +1,7 @@
 #include <inttypes.h>
 
 // i2c总线数
-#define I2C_NUM 2
+#define I2C_NUM 4
 
 // i2c 初始化
 int8_t i2c_init_my();

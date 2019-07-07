@@ -199,6 +199,8 @@
 
 #include "I2CPortA01.h"
 #include "I2CPortA23.h"
+#include "I2CPortA45.h"
+#include "I2CPortA67.h"
 
 
 
