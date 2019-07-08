@@ -8,18 +8,30 @@
 
 // 当前i2c总线
 uint8_t currentPort = 0;
-bool (*i2c_init[I2C_NUM])(void)
-          = {i2c_init_pa01, i2c_init_pa23, i2c_init_pa45, i2c_init_pa67};
-bool (*i2c_start[I2C_NUM])(uint8_t addr)
-          = {i2c_start_pa01, i2c_start_pa23,i2c_start_pa45, i2c_start_pa67};
-bool (*i2c_rep_start[I2C_NUM])(uint8_t addr)
-          = {i2c_rep_start_pa01, i2c_rep_start_pa23,i2c_rep_start_pa45, i2c_rep_start_pa67};
-uint8_t (*i2c_read[I2C_NUM])(bool last)
-          = {i2c_read_pa01, i2c_read_pa23,i2c_read_pa45, i2c_read_pa67};
-bool (*i2c_write[I2C_NUM])(uint8_t value)
-          = {i2c_write_pa01, i2c_write_pa23,i2c_write_pa45, i2c_write_pa67};
-void (*i2c_stop[I2C_NUM])(void)
-          = {i2c_stop_pa01, i2c_stop_pa23, i2c_stop_pa45, i2c_stop_pa67};
+bool (*i2c_init[I2C_NUM])(void) = {
+  i2c_init_pa01, i2c_init_pa23, i2c_init_pa45, i2c_init_pa67
+  ,i2c_init_pc01, i2c_init_pc23, i2c_init_pc45, i2c_init_pc67
+};
+bool (*i2c_start[I2C_NUM])(uint8_t addr) = {
+  i2c_start_pa01, i2c_start_pa23,i2c_start_pa45, i2c_start_pa67
+  ,i2c_start_pc01, i2c_start_pa23,i2c_start_pa45, i2c_start_pa67
+  };
+bool (*i2c_rep_start[I2C_NUM])(uint8_t addr) = {
+  i2c_rep_start_pa01, i2c_rep_start_pa23,i2c_rep_start_pa45, i2c_rep_start_pa67
+  ,i2c_rep_start_pc01, i2c_rep_start_pa23,i2c_rep_start_pa45, i2c_rep_start_pa67
+};
+uint8_t (*i2c_read[I2C_NUM])(bool last) = {
+  i2c_read_pa01, i2c_read_pa23,i2c_read_pa45, i2c_read_pa67
+  ,i2c_read_pc01, i2c_read_pc23,i2c_read_pc45, i2c_read_pc67
+};
+bool (*i2c_write[I2C_NUM])(uint8_t value) = {
+  i2c_write_pa01, i2c_write_pa23,i2c_write_pa45, i2c_write_pa67
+  ,i2c_write_pc01, i2c_write_pc23,i2c_write_pc45, i2c_write_pc67
+};
+void (*i2c_stop[I2C_NUM])(void) = {
+  i2c_stop_pa01, i2c_stop_pa23, i2c_stop_pa45, i2c_stop_pa67
+  ,i2c_stop_pc01, i2c_stop_pc23, i2c_stop_pc45, i2c_stop_pc67
+};
 
 // i2c 多字节写
 uint8_t i2c_write_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t *data){
