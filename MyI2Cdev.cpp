@@ -4,33 +4,45 @@
 #define I2C_FASTMODE 1
 
 #include "SoftI2C/SoftI2CMaster.h"
-
+/**
+ * portA 0 ~ 7 : 22 ~ 29
+ * portC 0 ~ 7 : 37 ~ 30
+ * portF 0 ~ 7 : A0 ~ A7
+ * portG 0,1,2, portD 7 : 41 ~ 38
+ * 
+ */
 
 // 当前i2c总线
 uint8_t currentPort = 0;
 bool (*i2c_init[I2C_NUM])(void) = {
   i2c_init_pa01, i2c_init_pa23, i2c_init_pa45, i2c_init_pa67
   ,i2c_init_pc01, i2c_init_pc23, i2c_init_pc45, i2c_init_pc67
+  ,i2c_init_pf01, i2c_init_pf23, i2c_init_pf45, i2c_init_pf67
 };
 bool (*i2c_start[I2C_NUM])(uint8_t addr) = {
   i2c_start_pa01, i2c_start_pa23,i2c_start_pa45, i2c_start_pa67
-  ,i2c_start_pc01, i2c_start_pa23,i2c_start_pa45, i2c_start_pa67
+  ,i2c_start_pc01, i2c_start_pc23,i2c_start_pc45, i2c_start_pc67
+  ,i2c_start_pf01, i2c_start_pf23,i2c_start_pf45, i2c_start_pf67
   };
 bool (*i2c_rep_start[I2C_NUM])(uint8_t addr) = {
   i2c_rep_start_pa01, i2c_rep_start_pa23,i2c_rep_start_pa45, i2c_rep_start_pa67
-  ,i2c_rep_start_pc01, i2c_rep_start_pa23,i2c_rep_start_pa45, i2c_rep_start_pa67
+  ,i2c_rep_start_pc01, i2c_rep_start_pc23,i2c_rep_start_pc45, i2c_rep_start_pc67
+  ,i2c_rep_start_pf01, i2c_rep_start_pf23,i2c_rep_start_pf45, i2c_rep_start_pf67
 };
 uint8_t (*i2c_read[I2C_NUM])(bool last) = {
   i2c_read_pa01, i2c_read_pa23,i2c_read_pa45, i2c_read_pa67
   ,i2c_read_pc01, i2c_read_pc23,i2c_read_pc45, i2c_read_pc67
+  ,i2c_read_pf01, i2c_read_pf23,i2c_read_pf45, i2c_read_pf67
 };
 bool (*i2c_write[I2C_NUM])(uint8_t value) = {
   i2c_write_pa01, i2c_write_pa23,i2c_write_pa45, i2c_write_pa67
   ,i2c_write_pc01, i2c_write_pc23,i2c_write_pc45, i2c_write_pc67
+  ,i2c_write_pf01, i2c_write_pf23,i2c_write_pf45, i2c_write_pf67
 };
 void (*i2c_stop[I2C_NUM])(void) = {
   i2c_stop_pa01, i2c_stop_pa23, i2c_stop_pa45, i2c_stop_pa67
   ,i2c_stop_pc01, i2c_stop_pc23, i2c_stop_pc45, i2c_stop_pc67
+  ,i2c_stop_pf01, i2c_stop_pf23, i2c_stop_pf45, i2c_stop_pf67
 };
 
 // i2c 多字节写

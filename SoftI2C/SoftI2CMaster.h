@@ -79,10 +79,7 @@
  * Version 1.0: basic functionality
  */
 
-/**
- * portA 0 ~ 7 : 22 ~ 29
- * portC 0 ~ 7 : 37 ~ 30
- */
+
 
 #ifndef __AVR_ARCH__
 #error "Not an AVR MCU! Use 'SlowSoftI2CMaster' library instead of 'SoftI2CMaster'!"
