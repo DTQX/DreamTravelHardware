@@ -198,8 +198,21 @@
 #include "I2CPortA23.h"
 #include "I2CPortA45.h"
 #include "I2CPortA67.h"
-
-
+#include "I2CPortB01.h"
+#include "I2CPortB23.h"
+#include "I2CPortB45.h"
+#include "I2CPortB67.h"
+#include "I2CPortC01.h"
+#include "I2CPortC23.h"
+#include "I2CPortC45.h"
+#include "I2CPortC67.h"
+#include "I2CPortD01.h"
+#include "I2CPortF01.h"
+#include "I2CPortF23.h"
+#include "I2CPortF45.h"
+#include "I2CPortF67.h"
+#include "I2CPortG01.h"
+#include "I2CPortG2D7.h"
 
 #pragma GCC diagnostic pop
 
