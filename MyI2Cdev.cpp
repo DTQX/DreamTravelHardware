@@ -3,6 +3,8 @@
 // #define I2C_NOINTERRUPT 1
 #define I2C_FASTMODE 1
 
+#include "SoftI2C/I2CPortA01.h"
+
 #include "SoftI2C/SoftI2CMaster.h"
 /**
  * portA 0 ~ 7 : 22 ~ 29
