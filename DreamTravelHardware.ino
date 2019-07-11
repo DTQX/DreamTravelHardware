@@ -95,8 +95,8 @@ void setup() {
 void loop() {
     // if programming failed, don't try to do anything
     // if (!dmpReady) return;
-    // Serial.println();
-    // Serial.println(micros());
+    Serial.println();
+    Serial.println(micros());
     for(uint8_t i = 0; i < I2C_NUM; i++){
         // 设置当前端口 
         setCurrentPort(i);
@@ -110,12 +110,12 @@ void loop() {
         updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
     }
     // 发送一个完整数据包
-    sendData();
+    // sendData();
 
     // 保证发送频率
     // while( millis() - lastSendTime < intervalTime);
 
-    // Serial.println(micros());
+    Serial.println(micros());
     // Serial.println();
     // Serial.println(millis());
 }
