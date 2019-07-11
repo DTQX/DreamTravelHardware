@@ -194,7 +194,7 @@
 #define I2C_READ    1
 #define I2C_WRITE   0
 
-// #include "I2CPortA01.h"
+#include "I2CPortA01.h"
 #include "I2CPortA23.h"
 #include "I2CPortA45.h"
 #include "I2CPortA67.h"
