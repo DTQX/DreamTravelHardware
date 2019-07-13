@@ -1,3 +1,13 @@
+## 2019.7.12
+    1.多i2c bus可行，读取一个mpu平均时间2200us，速度稍慢，考虑一下方案：a. 每两个使用一个微CPU，使用can传给主控cpu，can的速率为500kbps。b. 使用一个性能更强的mpu。比较价格，复杂度。
+      优先考虑b方案，另外再优化i2c代码
+
+    华强报价：
+    ARDUINO NANO ： ATmega328 4.2元  4*4mm  16mhz
+    arduino zero ：ATSAMD21G18 11元  48 MHz
+    arduino mega2560 ： ATMEGA2560  21元  16mhz
+    ARDUINO DUE ： AT91SAM3X8E  30元  84mhz
+
 ## 2019.7.1
     1.已解决i2c挂多个设备的问题，原硬件i2c上有一个10k的上拉电阻
     2.但是mpu通过AD0引脚动态改变地址会出现问题
