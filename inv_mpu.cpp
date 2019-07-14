@@ -70,7 +70,8 @@
 #endif                          /* #if defined AK8975_SECONDARY */
 #endif                          /* #if defined MPU9150 */
 
-#define MPU6050
+// #define MPU6050
+#define MPU6500
 
 #if !defined MPU6050 && !defined MPU9150 && !defined MPU6500 && !defined MPU9250
 #error  Which gyro are you using? Define MPUxxxx in your compiler options.
@@ -412,87 +413,13 @@ static struct gyro_state_s st;
    
 
 #elif defined MPU6500
-const struct gyro_reg_s reg = {
-    .who_am_i       = 0x75,
-    .rate_div       = 0x19,
-    .lpf            = 0x1A,
-    .prod_id        = 0x0C,
-    .user_ctrl      = 0x6A,
-    .fifo_en        = 0x23,
-    .gyro_cfg       = 0x1B,
-    .accel_cfg      = 0x1C,
-    .accel_cfg2     = 0x1D,
-    .lp_accel_odr   = 0x1E,
-    .motion_thr     = 0x1F,
-    .motion_dur     = 0x20,
-    .fifo_count_h   = 0x72,
-    .fifo_r_w       = 0x74,
-    .raw_gyro       = 0x43,
-    .raw_accel      = 0x3B,
-    .temp           = 0x41,
-    .int_enable     = 0x38,
-    .dmp_int_status = 0x39,
-    .int_status     = 0x3A,
-    .accel_intel    = 0x69,
-    .pwr_mgmt_1     = 0x6B,
-    .pwr_mgmt_2     = 0x6C,
-    .int_pin_cfg    = 0x37,
-    .mem_r_w        = 0x6F,
-    .accel_offs     = 0x77,
-    .i2c_mst        = 0x24,
-    .bank_sel       = 0x6D,
-    .mem_start_addr = 0x6E,
-    .prgm_start_h   = 0x70
-#ifdef AK89xx_SECONDARY
-    ,.raw_compass   = 0x49,
-    .s0_addr        = 0x25,
-    .s0_reg         = 0x26,
-    .s0_ctrl        = 0x27,
-    .s1_addr        = 0x28,
-    .s1_reg         = 0x29,
-    .s1_ctrl        = 0x2A,
-    .s4_ctrl        = 0x34,
-    .s0_do          = 0x63,
-    .s1_do          = 0x64,
-    .i2c_delay_ctrl = 0x67
-#endif
-};
-const struct hw_s hw = {
-    .addr           = 0x68,
-    .max_fifo       = 1024,
-    .num_reg        = 128,
-    .temp_sens      = 321,
-    .temp_offset    = 0,
-    .bank_size      = 256
-#if defined AK89xx_SECONDARY
-    ,.compass_fsr    = AK89xx_FSR
-#endif
-};
+struct gyro_reg_s reg;
+ 
+struct hw_s hw;
 
-const struct test_s test = {
-    .gyro_sens      = 32768/250,
-    .accel_sens     = 32768/2,  //FSR = +-2G = 16384 LSB/G
-    .reg_rate_div   = 0,    /* 1kHz. */
-    .reg_lpf        = 2,    /* 92Hz low pass filter*/
-    .reg_gyro_fsr   = 0,    /* 250dps. */
-    .reg_accel_fsr  = 0x0,  /* Accel FSR setting = 2g. */
-    .wait_ms        = 200,   //200ms stabilization time
-    .packet_thresh  = 200,    /* 200 samples */
-    .min_dps        = 20.f,  //20 dps for Gyro Criteria C
-    .max_dps        = 60.f, //Must exceed 60 dps threshold for Gyro Criteria B
-    .max_gyro_var   = .5f, //Must exceed +50% variation for Gyro Criteria A
-    .min_g          = .225f, //Accel must exceed Min 225 mg for Criteria B
-    .max_g          = .675f, //Accel cannot exceed Max 675 mg for Criteria B
-    .max_accel_var  = .5f,  //Accel must be within 50% variation for Criteria A
-    .max_g_offset   = .5f,   //500 mg for Accel Criteria C
-    .sample_wait_ms = 10    //10ms sample time wait
-};
+struct test_s test;
 
-static struct gyro_state_s st = {
-    .reg = &reg,
-    .hw = &hw,
-    .test = &test
-};
+static struct gyro_state_s st;
 #endif
 
 #define MAX_PACKET_LENGTH (12)
@@ -506,6 +433,7 @@ static int setup_compass(void);
 #endif
 
 int mpu_init_struct(){
+#ifdef MPU6050
      reg.who_am_i       = 0x75;
     reg.rate_div       = 0x19;
     reg.lpf            = 0x1A;
@@ -559,6 +487,84 @@ int mpu_init_struct(){
      st.reg = &reg;
     st.hw = &hw;
     st.test = &test;
+#endif // MPU6050
+#ifdef MPU6500
+    reg.who_am_i       = 0x75;
+    reg.rate_div       = 0x19;
+    reg.lpf            = 0x1A;
+    reg.prod_id        = 0x0C;
+    reg.user_ctrl      = 0x6A;
+    reg.fifo_en        = 0x23;
+    reg.gyro_cfg       = 0x1B;
+    reg.accel_cfg      = 0x1C;
+    reg.accel_cfg2     = 0x1D;
+    reg.lp_accel_odr   = 0x1E;
+    reg.motion_thr     = 0x1F;
+    reg.motion_dur     = 0x20;
+    reg.fifo_count_h   = 0x72;
+    reg.fifo_r_w       = 0x74;
+    reg.raw_gyro       = 0x43;
+    reg.raw_accel      = 0x3B;
+    reg.temp           = 0x41;
+    reg.int_enable     = 0x38;
+    reg.dmp_int_status = 0x39;
+    reg.int_status     = 0x3A;
+    reg.accel_intel    = 0x69;
+    reg.pwr_mgmt_1     = 0x6B;
+    reg.pwr_mgmt_2     = 0x6C;
+    reg.int_pin_cfg    = 0x37;
+    reg.mem_r_w        = 0x6F;
+    reg.accel_offs     = 0x77;
+    reg.i2c_mst        = 0x24;
+    reg.bank_sel       = 0x6D;
+    reg.mem_start_addr = 0x6E;
+    reg.prgm_start_h   = 0x70;
+#ifdef AK89xx_SECONDARY
+    ;reg.raw_compass   = 0x49;
+    reg.s0_addr        = 0x25;
+    reg.s0_reg         = 0x26;
+    reg.s0_ctrl        = 0x27;
+    reg.s1_addr        = 0x28;
+    reg.s1_reg         = 0x29;
+    reg.s1_ctrl        = 0x2A;
+    reg.s4_ctrl        = 0x34;
+    reg.s0_do          = 0x63;
+    reg.s1_do          = 0x64;
+    reg.i2c_delay_ctrl = 0x67;
+#endif
+
+    hw.addr           = 0x68;
+    hw.max_fifo       = 1024;
+    hw.num_reg        = 128;
+    hw.temp_sens      = 321;
+    hw.temp_offset    = 0;
+    hw.bank_size      = 256;
+#if defined AK89xx_SECONDARY
+    ;hw.compass_fsr    = AK89xx_FSR
+#endif
+
+    test.gyro_sens      = 32768/250;
+    test.accel_sens     = 32768/2;  //FSR = +-2G = 16384 LSB/G
+    test.reg_rate_div   = 0;    /* 1kHztest. */
+    test.reg_lpf        = 2;    /* 92Hz low pass filter*/
+    test.reg_gyro_fsr   = 0;    /* 250dpstest. */
+    test.reg_accel_fsr  = 0x0;  /* Accel FSR setting = 2gtest. */
+    test.wait_ms        = 200;   //200ms stabilization time
+    test.packet_thresh  = 200;    /* 200 samples */
+    test.min_dps        = 20.f;  //20 dps for Gyro Criteria C
+    test.max_dps        = 60.f; //Must exceed 60 dps threshold for Gyro Criteria B
+    test.max_gyro_var   = .5f; //Must exceed +50% variation for Gyro Criteria A
+    test.min_g          = .225f; //Accel must exceed Min 225 mg for Criteria B
+    test.max_g          = .675f; //Accel cannot exceed Max 675 mg for Criteria B
+    test.max_accel_var  = .5f;  //Accel must be within 50% variation for Criteria A
+    test.max_g_offset   = .5f;   //500 mg for Accel Criteria C
+    test.sample_wait_ms = 10;    //10ms sample time wait
+
+    st.reg = &reg;
+    st.hw = &hw;
+    st.test = &test;
+#endif // MPU6500
+
 }
 
 /**

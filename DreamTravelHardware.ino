@@ -23,6 +23,9 @@
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
 
+// mpu电源控制pin
+#define MPU_POWER 21
+
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 // #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
@@ -64,6 +67,9 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 
 void setup() {
     // TODO 加入连接协议
+
+    // 重置mpu
+    resetMpu();
 
     // initialize serial communication
     Serial.begin(COM_RATE);
@@ -158,17 +164,27 @@ void sendData(){
     #endif
 }
 
-// 初始化mpu pins
-void initMpuPins(){
-    //设置所有的mpu引脚为输出引脚
-    for(uint8_t i = 0; i<MPU_NUM; i++){
-        pinMode(mpuPins[i], OUTPUT); 
-    }
+// // 初始化mpu pins
+// void initMpuPins(){
+//     //设置所有的mpu引脚为输出引脚
+//     for(uint8_t i = 0; i<MPU_NUM; i++){
+//         pinMode(mpuPins[i], OUTPUT); 
+//     }
 
-    //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
-    for(uint8_t i = 0; i<MPU_NUM; i++){
-        digitalWrite(mpuPins[i], HIGH); 
-    }
+//     //设置所有的mpu引脚为高电平，默认不选中，低电平为选中
+//     for(uint8_t i = 0; i<MPU_NUM; i++){
+//         digitalWrite(mpuPins[i], HIGH); 
+//     }
+// }
+
+// 重启mpu，防止mpu占用i2c不放
+void resetMpu(){
+    pinMode(MPU_POWER, OUTPUT); 
+    digitalWrite(MPU_POWER, LOW);
+    delay(50);
+    digitalWrite(MPU_POWER, HIGH);
+    delay(50);
+
 }
 
 // initialize device
