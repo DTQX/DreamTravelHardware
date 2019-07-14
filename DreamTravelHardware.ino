@@ -138,7 +138,7 @@ uint8_t updateOneLastPacket(uint16_t startIndex){
     lastPacket[startIndex + 6] = fifoBuffer[12];
     lastPacket[startIndex + 7] = fifoBuffer[13];
 
-    // formateOutput();
+    formateOutput();
 
     return 0;
 }
@@ -212,35 +212,36 @@ uint8_t dmpGetEuler(float *data, Quaternion * q) {
 
 // 格式化输出，用于调试
 void formateOutput(){
-    // long quat[4];
-    // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
-    // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
-    // quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
-    // quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
-    // q.w = quat[0] / QUAT_SENS;
-    // q.x = quat[1] / QUAT_SENS;
-    // q.y = quat[2] / QUAT_SENS;
-    // q.z = quat[3] / QUAT_SENS;
-    // dmpGetEuler(euler, &q);
+    int16_t quat[4];
+    quat[0] = (fifoBuffer[0] << 8) | (fifoBuffer[1] ) ;
+    quat[1] = (fifoBuffer[4] << 8) | (fifoBuffer[5] ) ;
+    quat[2] = (fifoBuffer[8] << 8) | (fifoBuffer[9] ) ;
+    quat[3] = (fifoBuffer[12] << 8) | (fifoBuffer[13] );
+
+    q.w = quat[0] / QUAT_SENS;
+    q.x = quat[1] / QUAT_SENS;
+    q.y = quat[2] / QUAT_SENS;
+    q.z = quat[3] / QUAT_SENS;
+    dmpGetEuler(euler, &q);
 
     // Serial.print(index);
-    // Serial.print(" --- euler:\t");
-    // Serial.print(euler[0] * 180/M_PI);
-    // Serial.print("\t");
-    // Serial.print(euler[1] * 180/M_PI);
-    // Serial.print("\t");
-    // Serial.println(euler[2] * 180/M_PI);
+    Serial.print(" --- euler:\t");
+    Serial.print(euler[0] * 180/M_PI);
+    Serial.print("\t");
+    Serial.print(euler[1] * 180/M_PI);
+    Serial.print("\t");
+    Serial.println(euler[2] * 180/M_PI);
 
-    // Serial.print(" --- Quat :");
+    Serial.print(" --- Quat :");
     
-    // Serial.print(q.w);
-    // Serial.print("  ");
-    // Serial.print(q.x);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
-    // Serial.print(q.z);
-    // Serial.print("  ");
+    Serial.print(q.w);
+    Serial.print("  ");
+    Serial.print(q.x);
+    Serial.print("  ");
+    Serial.print(q.y);
+    Serial.print("  ");
+    Serial.print(q.z);
+    Serial.print("  ");
 
     // if(index == 5){
     //     Serial.println();
