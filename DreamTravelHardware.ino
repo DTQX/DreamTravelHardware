@@ -42,7 +42,7 @@ uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
 uint8_t packetSize;    // expected DMP packet size  dmp产生的数据大小
 uint16_t fifoCount;     // count of all bytes currently in FIFO
-uint8_t fifoBuffer[32]; // FIFO storage buffer
+// uint8_t fifoBuffer[32]; // FIFO storage buffer
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
@@ -97,17 +97,17 @@ void loop() {
     // if (!dmpReady) return;
     // Serial.println();
     // Serial.println(micros());
-    for(uint8_t i = 0; i < I2C_NUM; i++){
+    for(uint8_t i = 0; i < 1; i++){
         // 设置当前端口 
         setCurrentPort(i);
 
-        set_dev_addr(0x68);
-        // 更新lastPacket
-        updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
+        // set_dev_addr(0x68);
+        // // 更新lastPacket
+        // updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH, 0x68);
 
         set_dev_addr(0x69);
         // 更新lastPacket
-        updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
+        updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH, 0x69);
     }
     // 发送一个完整数据包
     // sendData();
@@ -121,24 +121,29 @@ void loop() {
 }
 
 // 更新一个 mpu 的lastPacket
-uint8_t updateOneLastPacket(uint16_t startIndex){
-    if(mpu_read_latest_fifo_stream(packetSize, fifoBuffer)){
-        DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
-        DEBUG_PRINTLN(result);
-        return -1;
+uint8_t updateOneLastPacket(uint16_t startIndex, uint8_t devAddr){
+    // if(mpu_read_latest_fifo_stream(packetSize, fifoBuffer)){
+    //     DEBUG_PRINT("mpu_read_latest_fifo_stream error result: ");
+    //     DEBUG_PRINTLN(result);
+    //     return -1;
+    // }
+    if(i2c_read_dmp(devAddr, packetSize, lastPacket, startIndex)){
+        return 1;
     }
     // mpu数据填充到 lastPacket
     
-    lastPacket[startIndex] = fifoBuffer[0];
-    lastPacket[startIndex + 1] = fifoBuffer[1];
-    lastPacket[startIndex + 2] = fifoBuffer[4];
-    lastPacket[startIndex + 3] = fifoBuffer[5];
-    lastPacket[startIndex + 4] = fifoBuffer[8];
-    lastPacket[startIndex + 5] = fifoBuffer[9];
-    lastPacket[startIndex + 6] = fifoBuffer[12];
-    lastPacket[startIndex + 7] = fifoBuffer[13];
+    // lastPacket[startIndex] = fifoBuffer[0];
+    // lastPacket[startIndex + 1] = fifoBuffer[1];
+    // lastPacket[startIndex + 2] = fifoBuffer[4];
+    // lastPacket[startIndex + 3] = fifoBuffer[5];
+    // lastPacket[startIndex + 4] = fifoBuffer[8];
+    // lastPacket[startIndex + 5] = fifoBuffer[9];
+    // lastPacket[startIndex + 6] = fifoBuffer[12];
+    // lastPacket[startIndex + 7] = fifoBuffer[13];
 
-    // formateOutput();
+
+    formateOutput(startIndex);
+
 
     return 0;
 }
@@ -150,7 +155,8 @@ void sendData(){
 
     #ifdef DEBUG
     for(uint8_t j = 0; j < PACKET_BUFFER_LENGTH; j++){
-        Serial.print(lastPacket[j]);
+        Serial.print(lastPacket[j], HEX);
+        // Serial.print(" ");
     }
     Serial.println();
     #else
@@ -180,7 +186,7 @@ void initDevice(){
     // 初始化mpu数据结构
     dmp_init_struct();
     mpu_init_struct();
-    for(uint8_t i = 0; i< I2C_NUM; i++){
+    for(uint8_t i = 0; i< 1; i++){
         // 设置当前端口 
         setCurrentPort(i);
 
@@ -199,6 +205,7 @@ void initDevice(){
 
     // 获取dmp数据包大小
     packetSize = dmp_get_packet_length();
+
 }
 
 // 获取euler
@@ -211,16 +218,16 @@ uint8_t dmpGetEuler(float *data, Quaternion * q) {
 }
 
 // 格式化输出，用于调试
-void formateOutput(){
-    // long quat[4];
-    // quat[0] = ((long)fifoBuffer[0] << 8) | ((long)fifoBuffer[1]) ;
-    // quat[1] = ((long)fifoBuffer[4] << 8) | ((long)fifoBuffer[5]);
-    // quat[2] = ((long)fifoBuffer[8] << 8) | ((long)fifoBuffer[9]);
-    // quat[3] = ((long)fifoBuffer[12] << 8) | ((long)fifoBuffer[13]) ;
-    // q.w = quat[0] / QUAT_SENS;
-    // q.x = quat[1] / QUAT_SENS;
-    // q.y = quat[2] / QUAT_SENS;
-    // q.z = quat[3] / QUAT_SENS;
+void formateOutput(uint16_t startIndex){
+    long quat[4];
+    quat[0] = ((long)lastPacket[startIndex] << 8) | ((long)lastPacket[startIndex+1]) ;
+    quat[1] = ((long)lastPacket[startIndex+2] << 8) | ((long)lastPacket[startIndex+3]);
+    quat[2] = ((long)lastPacket[startIndex+4] << 8) | ((long)lastPacket[startIndex+5]);
+    quat[3] = ((long)lastPacket[startIndex+6] << 8) | ((long)lastPacket[startIndex+7]) ;
+    q.w = quat[0] / QUAT_SENS;
+    q.x = quat[1] / QUAT_SENS;
+    q.y = quat[2] / QUAT_SENS;
+    q.z = quat[3] / QUAT_SENS;
     // dmpGetEuler(euler, &q);
 
     // Serial.print(index);
@@ -231,16 +238,16 @@ void formateOutput(){
     // Serial.print("\t");
     // Serial.println(euler[2] * 180/M_PI);
 
-    // Serial.print(" --- Quat :");
+    Serial.print(" --- Quat :");
     
-    // Serial.print(q.w);
-    // Serial.print("  ");
-    // Serial.print(q.x);
-    // Serial.print("  ");
-    // Serial.print(q.y);
-    // Serial.print("  ");
-    // Serial.print(q.z);
-    // Serial.print("  ");
+    Serial.print(q.w);
+    Serial.print("  ");
+    Serial.print(q.x);
+    Serial.print("  ");
+    Serial.print(q.y);
+    Serial.print("  ");
+    Serial.print(q.z);
+    Serial.println("  ");
 
     // if(index == 5){
     //     Serial.println();
