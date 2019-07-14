@@ -15,7 +15,9 @@
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 
-#include "Wire.h"
+#include "my_i2cdev.h"
+
+// #include "Wire.h"
 
 // 开启调试
  #define DEBUG
@@ -77,14 +79,15 @@ void dmpDataReady() {
 
 void setup() {
     // 初始化Wire
-    Wire.begin();
-    Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+    // Wire.begin();
+    // Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
     
 
     // TODO 加入连接协议
 
     // 初始化mpu pins
     initMpuPins();
+    i2c_init_my();
 
     // initialize serial communication
     Serial.begin(COM_RATE);
