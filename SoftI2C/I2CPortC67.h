@@ -76,7 +76,7 @@ void i2c_wait_scl_high_pc67(void)
   __asm__ __volatile__ 
     ("_Li2c_wait_stretch_pc67: \n\t"
      " sbis	%[SCLIN],%[SCLPIN]	;wait for SCL high \n\t" 
-     " rjmp	_Li2c_wait_stretch_pc67 \n\t"
+     " jmp	_Li2c_wait_stretch_pc67 \n\t"
      " cln                              ;signal: no timeout \n\t"
      " ret "
      : : [SCLIN] "I" (SCL_IN_PC67), [SCLPIN] "I" (SCL_PIN_PC67));
@@ -87,22 +87,22 @@ void i2c_wait_scl_high_pc67(void)
       "_Lwait_stretch: \n\t"
       " clr     __tmp_reg__             ;do next loop 255 times \n\t"
       "_Lwait_stretch_inner_loop: \n\t"
-      " rcall   _Lcheck_scl_level       ;call check function   ;; 12C \n\t"
+      " call   _Lcheck_scl_level       ;call check function   ;; 12C \n\t"
       " brpl    _Lstretch_done          ;done if N=0           ;; +1 = 13C\n\t"
       " dec     __tmp_reg__             ;dec inner loop counter;; +1 = 14C\n\t"
       " brne    _Lwait_stretch_inner_loop                      ;; +2 = 16C\n\t"
       " sbiw    r26,1                   ;dec outer loop counter \n\t"
       " brne    _Lwait_stretch          ;continue with outer loop \n\t"
       " sen                             ;timeout -> set N-bit=1 \n\t"
-      " rjmp _Lwait_return              ;and return with N=1\n\t"
+      " jmp _Lwait_return              ;and return with N=1\n\t"
       "_Lstretch_done:                  ;SCL=1 sensed \n\t"            
       " cln                             ;OK -> clear N-bit \n\t"
-      " rjmp _Lwait_return              ; and return with N=0 \n\t"
+      " jmp _Lwait_return              ; and return with N=0 \n\t"
 
       "_Lcheck_scl_level:                                      ;; call = 3C\n\t"
       " cln                                                    ;; +1C = 4C \n\t"
       " sbic	%[SCLIN],%[SCLPIN]      ;skip if SCL still low ;; +2C = 6C \n\t"
-      " rjmp    _Lscl_high                                     ;; +0C = 6C \n\t"
+      " jmp    _Lscl_high                                     ;; +0C = 6C \n\t"
       " sen                                                    ;; +1 = 7C\n\t "
       "_Lscl_high: "
       " nop                                                    ;; +1C = 8C \n\t"
@@ -219,7 +219,7 @@ bool  i2c_start_pc67(uint8_t addr)
 #endif
      // 一直等待，直到scl变高
      " sbis     %[SCLIN],%[SCLPIN]      ;check for clock stretching slave\n\t"
-     " rcall    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t"
+     " call    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t"
      // 不等待，scl为低直接返回
      // " clr      r24                     ;set return value to false \n\t"
      // " sbis     %[SCLIN],%[SCLPIN]      ;check for SCL high \n\t"
@@ -230,8 +230,8 @@ bool  i2c_start_pc67(uint8_t addr)
      " cbi      %[SDAOUT],%[SDAPIN]     ;disable pull-up \n\t"
 #endif
      " sbi      %[SDADDR],%[SDAPIN]     ;force SDA low  \n\t" 
-     " rcall    ass_i2c_delay_half_pc67      ;wait T/2 \n\t"
-     " rcall    ass_i2c_write_pc67           ;now write address \n\t"
+     " call    ass_i2c_delay_half_pc67      ;wait T/2 \n\t"
+     " call    ass_i2c_write_pc67           ;now write address \n\t"
      " ret"
      : : [SDADDR] "I"  (SDA_DDR_PC67), [SDAPIN] "I" (SDA_PIN_PC67),
        [SDAOUT] "I" (SDA_OUT_PC67), [SCLOUT] "I" (SCL_OUT_PC67),
@@ -257,25 +257,25 @@ bool  i2c_rep_start_pc67(uint8_t addr)
      " cbi      %[SCLOUT],%[SCLPIN]     ;disable SCL pull-up \n\t"
 #endif
      " sbi	%[SCLDDR],%[SCLPIN]	;force SCL low \n\t" 
-     " rcall 	ass_i2c_delay_half_pc67	;delay  T/2 \n\t" 
+     " call 	ass_i2c_delay_half_pc67	;delay  T/2 \n\t" 
      " cbi	%[SDADDR],%[SDAPIN]	;release SDA \n\t"
 #if I2C_PULLUP
      " sbi      %[SDAOUT],%[SDAPIN]     ;enable SDA pull-up \n\t"
 #endif
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2 \n\t" 
+     " call	ass_i2c_delay_half_pc67	;delay T/2 \n\t" 
      " cbi	%[SCLDDR],%[SCLPIN]	;release SCL \n\t"
 #if I2C_PULLUP
      " sbi      %[SCLOUT],%[SCLPIN]	;enable SCL pull-up \n\t"
 #endif
-     " rcall 	ass_i2c_delay_half_pc67	;delay  T/2 \n\t" 
+     " call 	ass_i2c_delay_half_pc67	;delay  T/2 \n\t" 
      " sbis     %[SCLIN],%[SCLPIN]      ;check for clock stretching slave\n\t"
-     " rcall    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t"
+     " call    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t"
 #if I2C_PULLUP
      " cbi 	%[SDAOUT],%[SDAPIN]	;disable SDA pull-up\n\t"
 #endif
      " sbi 	%[SDADDR],%[SDAPIN]	;force SDA low \n\t"
-     " rcall 	ass_i2c_delay_half_pc67	;delay	T/2 \n\t" 
-     " rcall    ass_i2c_write_pc67       \n\t"
+     " call 	ass_i2c_delay_half_pc67	;delay	T/2 \n\t" 
+     " call    ass_i2c_write_pc67       \n\t"
      " ret"
      : : [SCLDDR] "I"  (SCL_DDR_PC67), [SCLPIN] "I" (SCL_PIN_PC67),
        [SCLIN] "I" (SCL_IN_PC67), [SCLOUT] "I" (SCL_OUT_PC67), [SDAOUT] "I" (SDA_OUT_PC67),
@@ -359,21 +359,21 @@ bool  i2c_start_wait_pc67(uint8_t addr)
     " cli                               ;disable interrupts \n\t"
 #endif
     " sbis     %[SCLIN],%[SCLPIN]      ;check for clock stretching slave\n\t"
-    " rcall    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t" 
+    " call    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t" 
 #if I2C_PULLUP
      " cbi      %[SDAOUT],%[SDAPIN]     ;disable pull-up \n\t"
 #endif
     " sbi 	%[SDADDR],%[SDAPIN]	;force SDA low \n\t" 
-    " rcall 	ass_i2c_delay_half_pc67	;delay T/2 \n\t" 
-    " rcall 	ass_i2c_write_pc67	        ;write address \n\t" 
+    " call 	ass_i2c_delay_half_pc67	;delay T/2 \n\t" 
+    " call 	ass_i2c_write_pc67	        ;write address \n\t" 
     " tst	r24		        ;if device not busy -> done \n\t" 
     " brne	_Li2c_start_wait_done_pc67 \n\t" 
-    " rcall	ass_i2c_stop_pc67	        ;terminate write & enable IRQ \n\t"
+    " call	ass_i2c_stop_pc67	        ;terminate write & enable IRQ \n\t"
 #if I2C_MAXWAIT
     " sbiw      r30,1                   ;decrement max wait counter\n\t"
     " breq       _Li2c_start_wait_done_pc67  ;if zero reached, exit with false -> r24 already zero!\n\t"
 #endif
-    " rjmp	_Li2c_start_wait1_pc67	;device busy, poll ack again \n\t" 
+    " jmp	_Li2c_start_wait1_pc67	;device busy, poll ack again \n\t" 
     "_Li2c_start_wait_done_pc67: \n\t"
     " clr       r25                     ;clear high byte of return value\n\t"
     " pop       __tmp_reg__             ;pop off orig argument \n\t"
@@ -414,19 +414,19 @@ void  i2c_stop_pc67(void)
      " cbi      %[SDAOUT],%[SDAPIN]     ;disable pull-up \n\t"
 #endif     
      " sbi      %[SDADDR],%[SDAPIN]     ;force SDA low \n\t" 
-     " rcall    ass_i2c_delay_half_pc67      ;T/2 delay \n\t"
+     " call    ass_i2c_delay_half_pc67      ;T/2 delay \n\t"
      " cbi      %[SCLDDR],%[SCLPIN]     ;release SCL \n\t" 
 #if I2C_PULLUP
      " sbi      %[SCLOUT],%[SCLPIN]	;enable SCL pull-up \n\t"
 #endif
-     " rcall    ass_i2c_delay_half_pc67      ;T/2 delay \n\t"
+     " call    ass_i2c_delay_half_pc67      ;T/2 delay \n\t"
      " sbis     %[SCLIN],%[SCLPIN]      ;check for clock stretching slave\n\t"
-     " rcall    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t" 
+     " call    ass_i2c_wait_scl_high_pc67   ;wait until SCL=H\n\t" 
      " cbi      %[SDADDR],%[SDAPIN]     ;release SDA \n\t"
 #if I2C_PULLUP
      " sbi      %[SDAOUT],%[SDAPIN]     ;enable SDA pull-up \n\t"
 #endif
-     " rcall    ass_i2c_delay_half_pc67 \n\t"
+     " call    ass_i2c_delay_half_pc67 \n\t"
 #if I2C_NOINTERRUPT
      " sei                              ;enable interrupts again!\n\t"
 #endif
@@ -468,7 +468,7 @@ bool i2c_write_pc67(uint8_t value)
     (
      " sec                              ;set carry flag \n\t"
      " rol      r24                     ;shift in carry and shift out MSB \n\t"
-     " rjmp _Li2c_write_first_pc67 \n\t"
+     " jmp _Li2c_write_first_pc67 \n\t"
      "_Li2c_write_bit_pc67:\n\t"
      " lsl      r24                     ;left shift into carry ;; 1C\n\t"
      "_Li2c_write_first_pc67:\n\t"
@@ -486,16 +486,16 @@ bool i2c_write_pc67(uint8_t value)
 #if I2C_PULLUP
      " sbi      %[SDAOUT],%[SDAPIN]     ;enable SDA pull-up \n\t"
 #endif
-     " rjmp      _Li2c_write_high_pc67                              ;; +2 = 11C \n\t"
+     " jmp      _Li2c_write_high_pc67                              ;; +2 = 11C \n\t"
      "_Li2c_write_low_pc67: \n\t"
 #if I2C_PULLUP
      " cbi      %[SDAOUT],%[SDAPIN]     ;disable pull-up \n\t"
 #endif
      " sbi	%[SDADDR],%[SDAPIN]	;force SDA low         ;; +2 = 9C \n\t"
-     " rjmp	_Li2c_write_high_pc67                               ;;+2 = 11C \n\t"
+     " jmp	_Li2c_write_high_pc67                               ;;+2 = 11C \n\t"
      "_Li2c_write_high_pc67: \n\t"
 #if I2C_DELAY_COUNTER >= 1
-     " rcall 	ass_i2c_delay_half_pc67	;delay T/2             ;;+X = 11C+X\n\t"
+     " call 	ass_i2c_delay_half_pc67	;delay T/2             ;;+X = 11C+X\n\t"
 #endif
      " cbi	%[SCLDDR],%[SCLPIN]	;release SCL           ;;+2 = 13C+X\n\t"
 #if I2C_PULLUP
@@ -506,16 +506,16 @@ bool i2c_write_pc67(uint8_t value)
      " nop \n\t"
      " nop \n\t"
      " sbis	%[SCLIN],%[SCLPIN]	;check for SCL high    ;;+2 = 16C+X\n\t"
-     " rcall    ass_i2c_wait_scl_high_pc67 \n\t"
+     " call    ass_i2c_wait_scl_high_pc67 \n\t"
      " brpl     _Ldelay_scl_high_pc67                              ;;+2 = 18C+X\n\t"
      "_Li2c_write_return_false_pc67: \n\t"
      " clr      r24                     ; return false because of timeout \n\t"
-     " rjmp     _Li2c_write_return_pc67 \n\t"
+     " jmp     _Li2c_write_return_pc67 \n\t"
      "_Ldelay_scl_high_pc67: \n\t"
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;;+X= 18C+2X\n\t"
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;;+X= 18C+2X\n\t"
 #endif
-     " rjmp	_Li2c_write_bit_pc67 \n\t"
+     " jmp	_Li2c_write_bit_pc67 \n\t"
      "              ;; +2 = 20C +2X for one bit-loop \n\t"
      "_Li2c_get_ack_pc67: \n\t"
 #if I2C_PULLUP
@@ -529,7 +529,7 @@ bool i2c_write_pc67(uint8_t value)
      " sbi      %[SDAOUT],%[SDAPIN]     ;enable SDA pull-up \n\t"
 #endif
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2 ;; +X = 7C+X \n\t"
+     " call	ass_i2c_delay_half_pc67	;delay T/2 ;; +X = 7C+X \n\t"
 #endif
      " clr	r25                                            ;; 17C+2X \n\t"
      " clr	r24		        ;return 0              ;; 14C + X \n\t"
@@ -541,12 +541,12 @@ bool i2c_write_pc67(uint8_t value)
      " cln                              ; clear N-bit          ;; 10C + X\n\t" 
      " nop \n\t"
      " sbis	%[SCLIN],%[SCLPIN]	;wait SCL high         ;; 12C + X \n\t"
-     " rcall    ass_i2c_wait_scl_high_pc67 \n\t"
+     " call    ass_i2c_wait_scl_high_pc67 \n\t"
      " brmi     _Li2c_write_return_false_pc67                       ;; 13C + X \n\t "
      " sbis	%[SDAIN],%[SDAPIN]      ;if SDA hi -> return 0 ;; 15C + X \n\t"
      " ldi	r24,1                   ;return true           ;; 16C + X \n\t"
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;; 16C + 2X \n\t"
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;; 16C + 2X \n\t"
 #endif
      "_Li2c_write_return_pc67: \n\t"
      " nop \n\t "
@@ -598,21 +598,21 @@ uint8_t i2c_read_pc67(bool last)
      " nop \n\t"
      " nop \n\t"
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;; 4C+X \n\t" 
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;; 4C+X \n\t" 
 #endif
      " cbi	%[SCLDDR],%[SCLPIN]	;release SCL           ;; 6C + X \n\t" 
 #if I2C_PULLUP
      " sbi      %[SCLOUT],%[SCLPIN]	;enable SCL pull-up \n\t"
 #endif
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;; 6C + 2X \n\t" 
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;; 6C + 2X \n\t" 
 #endif
      " cln                              ; clear N-bit          ;; 7C + 2X \n\t"
      " nop \n\t "
      " nop \n\t "
      " nop \n\t "
      " sbis     %[SCLIN], %[SCLPIN]     ;check for SCL high    ;; 9C +2X \n\t" 
-     " rcall    ass_i2c_wait_scl_high_pc67 \n\t"
+     " call    ass_i2c_wait_scl_high_pc67 \n\t"
      " brmi     _Li2c_read_return_pc67       ;return if timeout     ;; 10C + 2X\n\t"
      " clc		  	        ;clear carry flag      ;; 11C + 2X\n\t" 
      " sbic	%[SDAIN],%[SDAPIN]	;if SDA is high        ;; 11C + 2X\n\t" 
@@ -632,7 +632,7 @@ uint8_t i2c_read_pc67(bool last)
 #if I2C_PULLUP
      " sbi      %[SDAOUT],%[SDAPIN]     ;enable SDA pull-up \n\t"
 #endif
-     " rjmp	_Li2c_put_ack_high_pc67 \n\t" 
+     " jmp	_Li2c_put_ack_high_pc67 \n\t" 
      "_Li2c_put_ack_low_pc67:                ;else \n\t" 
 #if I2C_PULLUP
      " cbi      %[SDAOUT],%[SDAPIN]     ;disable pull-up \n\t"
@@ -643,7 +643,7 @@ uint8_t i2c_read_pc67(bool last)
      " nop \n\t "
      " nop \n\t "
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;; 7C + X \n\t" 
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;; 7C + X \n\t" 
 #endif
      " cbi	%[SCLDDR],%[SCLPIN]	;release SCL           ;; 9C +X \n\t" 
 #if I2C_PULLUP
@@ -653,9 +653,9 @@ uint8_t i2c_read_pc67(bool last)
      " nop \n\t "
      " nop \n\t "
      " sbis	%[SCLIN],%[SCLPIN]	;wait SCL high         ;; 12C + X\n\t" 
-     " rcall    ass_i2c_wait_scl_high_pc67 \n\t"
+     " call    ass_i2c_wait_scl_high_pc67 \n\t"
 #if I2C_DELAY_COUNTER >= 1
-     " rcall	ass_i2c_delay_half_pc67	;delay T/2             ;; 11C + 2X\n\t" 
+     " call	ass_i2c_delay_half_pc67	;delay T/2             ;; 11C + 2X\n\t" 
 #endif
      "_Li2c_read_return_pc67: \n\t"
      " nop \n\t "
