@@ -122,7 +122,7 @@ void loop() {
         // lastSendTime = millis();
 
         // 选中mpu
-        selectMPU(mpuPins[i]);
+        // selectMPU(mpuPins[i]);
        
         // 更新lastPacket
         updateOneLastPacket(i);
@@ -133,7 +133,7 @@ void loop() {
         sendOneData(i);
 
         // 取消选中mpu
-        unselectMPU(mpuPins[i]);
+        // unselectMPU(mpuPins[i]);
 
         // 保证发送频率
         // while( millis() - lastSendTime < intervalTime);
@@ -147,10 +147,10 @@ int updateOneLastPacket(int index){
     // DEBUG_PRINTLN("into mpu_read_latest_fifo ");
     // int readResult = 1;
     unsigned char more[1];
-    // int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
+    int readResult = mpu_read_latest_fifo_stream(dmp_get_packet_length(), fifoBuffer);;
     // Serial.print("-----");
     // Serial.println(millis());
-    int readResult = mpu_read_fifo_stream(dmp_get_packet_length(), fifoBuffer, more);;
+    // int readResult = mpu_read_fifo_stream(dmp_get_packet_length(), fifoBuffer, more);;
     
     if(readResult){
 
@@ -170,12 +170,12 @@ int updateOneLastPacket(int index){
         q.z = quat[3] / QUAT_SENS;
         dmpGetEuler(euler, &q);
 
-        // Serial.print("euler\t");
-        // Serial.print(euler[0] * 180/3.1415);
-        // Serial.print("\t");
-        // Serial.print(euler[1] * 180/3.1415);
-        // Serial.print("\t");
-        // Serial.println(euler[2] * 180/3.1415);
+        Serial.print("euler\t");
+        Serial.print(euler[0] * 180/3.1415);
+        Serial.print("\t");
+        Serial.print(euler[1] * 180/3.1415);
+        Serial.print("\t");
+        Serial.println(euler[2] * 180/3.1415);
 
         // // ue4的不需要
         // Serial.print("euler\t");
