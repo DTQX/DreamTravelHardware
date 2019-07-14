@@ -1665,16 +1665,21 @@ int init_device(){
      * then the interrupts will be at 200Hz even if fifo rate
      * is set at a different rate. To avoid this issue include the DMP_FEATURE_TAP
      */
-    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
-        DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
-        DMP_FEATURE_GYRO_CAL)){
+    // if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT | DMP_FEATURE_TAP |
+    //     DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_SEND_RAW_ACCEL | DMP_FEATURE_SEND_CAL_GYRO |
+    //     DMP_FEATURE_GYRO_CAL)){
+    //     Serial.print(F("dmp_enable_feature error"));
+        
+    //     return -12;
+    // }
+    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT)){
         Serial.print(F("dmp_enable_feature error"));
         
         return -12;
     }
     
     
-    if(dmp_set_fifo_rate(100)){
+    if(dmp_set_fifo_rate(30)){
             Serial.print(F("dmp_set_fifo_rate error"));
         
         return -13;

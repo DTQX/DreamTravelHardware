@@ -3348,6 +3348,8 @@ lp_int_restore:
  *  @param[in]  data    FIFO packet.
  */
 char mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
+    Serial.println();
+    Serial.println(micros());
     unsigned char tmp[2];
     unsigned short fifo_count;
     if (!st.chip_cfg.dmp_on)
@@ -3375,7 +3377,7 @@ char mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
             return -6;
         }
     }
-
+    Serial.println(fifo_count / length);
     while (fifo_count >= length)
     {
         if (i2c_read_bytes(st.hw->addr, st.reg->fifo_r_w, length, data)){
@@ -3383,7 +3385,7 @@ char mpu_read_latest_fifo_stream(unsigned short length, unsigned char *data){
         }
         fifo_count -= length;
     }
-    
+    Serial.println(micros());
     return 0;
 }
 

@@ -95,8 +95,8 @@ void setup() {
 void loop() {
     // if programming failed, don't try to do anything
     // if (!dmpReady) return;
-    Serial.println();
-    Serial.println(micros());
+    // Serial.println();
+    // Serial.println(micros());
     for(uint8_t i = 0; i < I2C_NUM; i++){
         // 设置当前端口 
         setCurrentPort(i);
@@ -115,7 +115,7 @@ void loop() {
     // 保证发送频率
     // while( millis() - lastSendTime < intervalTime);
 
-    Serial.println(micros());
+    // Serial.println(micros());
     // Serial.println();
     // Serial.println(millis());
 }
@@ -174,7 +174,7 @@ void initMpuPins(){
 // initialize device
 void initDevice(){
     // 初始化i2c
-    i2c_init_my();
+    my_i2c_init();
 
     Serial.println(F("Initializing I2C devices..."));
     // 初始化mpu数据结构

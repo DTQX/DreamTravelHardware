@@ -128,7 +128,7 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
 }
 
 // i2c初始化
-int8_t i2c_init_my(){
+int8_t my_i2c_init(){
     for(uint8_t i = 0; i < I2C_NUM; i++){
         // 如果SCL为低电平，并不会直接返回，会一直等SCL变高
         // i2c初始化, 如果SCL为低电平直接返回false，返回true表示成功

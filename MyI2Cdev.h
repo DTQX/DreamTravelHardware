@@ -4,7 +4,7 @@
 #define I2C_NUM 8
 
 // i2c 初始化
-int8_t i2c_init_my();
+int8_t my_i2c_init();
 // 设置当前i2c bus
 void setCurrentPort(uint8_t port);
 // i2c 多字节写
