@@ -12,9 +12,6 @@
  * 
  */
 
-uint8_t fifoBuffer[1024];
-
-
 // 当前i2c总线
 uint8_t currentPort = 0;
 bool (*i2c_init[I2C_NUM])(void) = {
@@ -111,7 +108,7 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
     // 发送读取地址
     i2c_write[currentPort](regAddr);
     // 发送停止信号
-    // i2c_stop[currentPort]();
+    i2c_stop[currentPort]();
     // 开始新的i2c连接，读取数据
     if (!i2c_rep_start[currentPort]((devAddr <<1 | I2C_READ))){
         return -2;
@@ -127,76 +124,6 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
     }
     data[cnt] = i2c_read[currentPort](true);
     i2c_stop[currentPort]();
-    return 0;
-}
-
-// 专门读取dmp
-int8_t i2c_read_dmp(uint8_t devAddr, uint8_t packetSize, uint8_t *lastPacket, uint16_t startIndex){
-    Serial.println();
-    Serial.println(micros());
-    
-    // 开始新的i2c连接，发送从机地址
-    if (!i2c_start[currentPort](devAddr <<1 | I2C_WRITE)){
-        return -1;
-    }
-    // 发送读取地址,读取fifo_cout
-    i2c_write[currentPort](0x72);
-    if (!i2c_rep_start[currentPort]((devAddr <<1 | I2C_READ))){
-        return -2;
-    }
-    
-    uint8_t tmp[2];
-    tmp[0] = i2c_read[currentPort](false);
-    tmp[1] = i2c_read[currentPort](true);
-    unsigned short fifo_count = (tmp[0] << 8) | tmp[1];
-
-    if (fifo_count > 512) {
-        /* FIFO is 50% full, better check overflow bit. */
-        return -3;
-    }
-
-    uint16_t cnt;
-    uint16_t length = fifo_count/packetSize * packetSize;
-
-    if(length > 0){
-        // dmp有数据
-        if (!i2c_rep_start[currentPort](devAddr <<1 | I2C_WRITE)){
-            return -1;
-        }
-        // 发送读取地址， 读取dmp fifo
-        i2c_write[currentPort](0x74);
-        if (!i2c_rep_start[currentPort]((devAddr <<1 | I2C_READ))){
-            return -2;
-        }
-        for (cnt=0; cnt < length - 1; cnt++){
-            // 读取数据
-            fifoBuffer[cnt] = i2c_read[currentPort](false);
-            #ifdef I2CDEV_SERIAL_DEBUG
-                Serial.print(lastPacket[cnt], HEX);
-                if (cnt + 1 < length) Serial.print(" ");
-            #endif
-            // Serial.print(fifoBuffer[cnt], HEX);
-            // Serial.print(" ");
-        }
-        fifoBuffer[cnt] = i2c_read[currentPort](true);
-
-        uint16_t index = length - packetSize;
-        lastPacket[startIndex] = fifoBuffer[index];
-        lastPacket[startIndex + 1] = fifoBuffer[index+1];
-        lastPacket[startIndex + 2] = fifoBuffer[index+4];
-        lastPacket[startIndex + 3] = fifoBuffer[index+5];
-        lastPacket[startIndex + 4] = fifoBuffer[index+8];
-        lastPacket[startIndex + 5] = fifoBuffer[index+9];
-        lastPacket[startIndex + 6] = fifoBuffer[index+12];
-        lastPacket[startIndex + 7] = fifoBuffer[index+13];
-
-        Serial.println(micros());
-
-    }
-
-    // 断开连接
-    i2c_stop[currentPort]();
-
     return 0;
 }
 
@@ -218,4 +145,3 @@ int8_t get_ms(unsigned long *timestamp){
     *timestamp = 0;
     return 0;
 }
-
