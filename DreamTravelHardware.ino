@@ -26,6 +26,9 @@
 // mpu电源控制pin
 #define MPU_POWER 21
 
+// set dmp bias interrupt pin
+#define SetBiasIntPin 20
+
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 // #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
@@ -74,14 +77,15 @@ void setup() {
     // initialize serial communication
     Serial.begin(COM_RATE);
 
+    Serial.println("---");
     // initialize device
-    initDevice();
+    // initDevice();
 
-    // 设置开始、结束标志符
-    lastPacket[0] = START_CODE_1;
-    lastPacket[1] = START_CODE_1;
-    lastPacket[PACKET_BUFFER_LENGTH -2] = START_CODE_2;
-    lastPacket[PACKET_BUFFER_LENGTH -1] = START_CODE_2;
+    // // 设置开始、结束标志符
+    // lastPacket[0] = START_CODE_1;
+    // lastPacket[1] = START_CODE_1;
+    // lastPacket[PACKET_BUFFER_LENGTH -2] = START_CODE_2;
+    // lastPacket[PACKET_BUFFER_LENGTH -1] = START_CODE_2;
     
 //     // 等待开始
 //     // Serial.println(F("\nSend any character to begin DMP programming: "));
@@ -103,18 +107,18 @@ void loop() {
     // if (!dmpReady) return;
     // Serial.println();
     // Serial.println(micros());
-    for(uint8_t i = 0; i < I2C_NUM; i++){
-        // 设置当前端口 
-        setCurrentPort(i);
+    // for(uint8_t i = 0; i < I2C_NUM; i++){
+    //     // 设置当前端口 
+    //     setCurrentPort(i);
 
-        set_dev_addr(0x68);
-        // 更新lastPacket
-        updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
+    //     set_dev_addr(0x68);
+    //     // 更新lastPacket
+    //     updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
 
-        set_dev_addr(0x69);
-        // 更新lastPacket
-        updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
-    }
+    //     set_dev_addr(0x69);
+    //     // 更新lastPacket
+    //     updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
+    // }
     // 发送一个完整数据包
     // sendData();
 
@@ -184,7 +188,6 @@ void resetMpu(){
     delay(50);
     digitalWrite(MPU_POWER, HIGH);
     delay(50);
-
 }
 
 // initialize device
@@ -215,6 +218,41 @@ void initDevice(){
 
     // 获取dmp数据包大小
     packetSize = dmp_get_packet_length();
+}
+
+// 初始化中断
+void initInterrupt(){
+    pinMode(SetBiasIntPin, INPUT);
+    attachInterrupt(digitalPinToInterrupt(SetBiasIntPin), handleSetDmpBias, CHANGE);
+}
+
+void handleSetDmpBias(){
+    long gyro, accel;
+    Serial.println("set dmp bias");
+    // delayMicroseconds(2000000);
+    for(uint8_t i = 0; i< I2C_NUM; i++){
+        // 设置当前端口 
+        setCurrentPort(i);
+        
+        // 访问第一个mpu
+        set_dev_addr(0x68);
+        Serial.print(i);
+        Serial.print("---0x68:");
+        Serial.println(init_device());
+        mpu_run_6500_self_test(&gyro, &accel, 0);
+        dmp_set_gyro_bias(&gyro);
+        dmp_set_accel_bias(&accel);
+
+        // 访问第二个mpu
+        set_dev_addr(0x69);
+        Serial.print(i);
+        Serial.print("---0x69:");
+        Serial.println(init_device());
+        mpu_run_6500_self_test(&gyro, &accel, 0);
+        dmp_set_gyro_bias(&gyro);
+        dmp_set_accel_bias(&accel);
+    }
+
 }
 
 // 获取euler
