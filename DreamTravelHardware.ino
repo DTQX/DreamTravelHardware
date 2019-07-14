@@ -123,6 +123,10 @@ void loop() {
     // 发送一个完整数据包
     // sendData();
 
+    if(digitalRead(SetBiasIntPin) == LOW){
+        handleSetDmpBias();
+    }
+
     // 保证发送频率
     // while( millis() - lastSendTime < intervalTime);
 
@@ -224,7 +228,7 @@ void initDevice(){
 // 初始化中断
 void initInterrupt(){
     pinMode(SetBiasIntPin, INPUT_PULLUP);
-    attachInterrupt(digitalPinToInterrupt(SetBiasIntPin), handleSetDmpBias, LOW);
+    // attachInterrupt(digitalPinToInterrupt(SetBiasIntPin), handleSetDmpBias, LOW);
 }
 
 void handleSetDmpBias(){
