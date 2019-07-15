@@ -243,7 +243,7 @@ void handleSetDmpBias(){
         Serial.print(i);
         Serial.print("---0x68:");
         Serial.println(init_device());
-        mpu_run_6500_self_test(gyro, accel, 0);
+        mpu_run_6500_self_test(gyro, accel, 1);
         dmp_set_gyro_bias(gyro);
         dmp_set_accel_bias(accel);
         // mpu_set_gyro_bias_reg(gyro);
@@ -254,7 +254,7 @@ void handleSetDmpBias(){
         Serial.print(i);
         Serial.print("---0x69:");
         Serial.println(init_device());
-        mpu_run_6500_self_test(&gyro, &accel, 0);
+        mpu_run_6500_self_test(&gyro, &accel, 1);
         dmp_set_gyro_bias(&gyro);
         dmp_set_accel_bias(&accel);
         // mpu_set_gyro_bias_reg(gyro);
