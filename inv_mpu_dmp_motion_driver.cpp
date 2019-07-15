@@ -1595,6 +1595,9 @@ int init_device(){
         
         return -7;
     }
+    long gyro[3]={10138, 1570, -74563}, accel[3]={3294, -2827, 2038};
+    mpu_set_gyro_bias_reg(gyro);
+    mpu_set_accel_bias_6500_reg(accel);
         
         /* To initialize the DMP:
      * 1. Call dmp_load_motion_driver_firmware(). This pushes the DMP image in

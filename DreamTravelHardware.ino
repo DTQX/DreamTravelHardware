@@ -26,6 +26,8 @@
 // mpu电源控制pin
 #define MPU_POWER 21
 
+#define I2C_NUM_LOCAL 1
+
 // set dmp bias interrupt pin
 #define SetBiasIntPin 20
 
@@ -36,7 +38,7 @@ const uint8_t START_CODE_1=88;   // 数据包开始标志
 const uint8_t CODE_LENGTH = 2;   // 标志符长度
 const uint8_t START_CODE_2=44;    // 数据表介绍标志
 const uint8_t intervalTime = 10;    // 数据发送间隔时间，单位ms
-const uint16_t PACKET_BUFFER_LENGTH = (I2C_NUM * 2) * MPU_DATA_SIZE + 2 * CODE_LENGTH ;   //  TODO 替换成数字 ， 完整数据包的长度，包括标志符
+const uint16_t PACKET_BUFFER_LENGTH = (I2C_NUM_LOCAL * 2) * MPU_DATA_SIZE + 2 * CODE_LENGTH ;   //  TODO 替换成数字 ， 完整数据包的长度，包括标志符
 uint8_t lastPacket[PACKET_BUFFER_LENGTH] = {0};     //储存上一次正确的quat
 unsigned long lastSendTime = 0;     // 数据上一次发送的时间
 // double QUAT_SENS  = 1073741824.0;   // 对应 MPU_DATA_SIZE 16
@@ -108,13 +110,13 @@ void loop() {
     // if (!dmpReady) return;
     // Serial.println();
     // Serial.println(micros());
-    for(uint8_t i = 0; i < I2C_NUM; i++){
+    for(uint8_t i = 0; i < I2C_NUM_LOCAL; i++){
         // 设置当前端口 
         setCurrentPort(i);
 
-        set_dev_addr(0x68);
-        // 更新lastPacket
-        updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
+        // set_dev_addr(0x68);
+        // // 更新lastPacket
+        // updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
 
         set_dev_addr(0x69);
         // 更新lastPacket
@@ -204,7 +206,7 @@ void initDevice(){
     // 初始化mpu数据结构
     dmp_init_struct();
     mpu_init_struct();
-    for(uint8_t i = 0; i< I2C_NUM; i++){
+    for(uint8_t i = 0; i< I2C_NUM_LOCAL; i++){
         // 设置当前端口 
         setCurrentPort(i);
 
@@ -234,7 +236,7 @@ void initInterrupt(){
 void handleSetDmpBias(){
     long gyro[3], accel[3];
     Serial.println("set dmp bias");
-    for(uint8_t i = 0; i< I2C_NUM; i++){
+    for(uint8_t i = 0; i< I2C_NUM_LOCAL; i++){
         // 设置当前端口 
         setCurrentPort(i);
         
@@ -242,21 +244,28 @@ void handleSetDmpBias(){
         set_dev_addr(0x68);
         Serial.print(i);
         Serial.print("---0x68:");
-        Serial.println(init_device());
         mpu_run_6500_self_test(gyro, accel, 1);
-        dmp_set_gyro_bias(gyro);
-        dmp_set_accel_bias(accel);
+        Serial.println(gyro[0]);
+        Serial.println(gyro[1]);
+        Serial.println(gyro[2]);
+        Serial.println(accel[0]);
+        Serial.println(accel[1]);
+        Serial.println(accel[2]);
         // mpu_set_gyro_bias_reg(gyro);
         // mpu_set_accel_bias_6500_reg(accel);
+        
 
         // 访问第二个mpu
         set_dev_addr(0x69);
         Serial.print(i);
         Serial.print("---0x69:");
-        Serial.println(init_device());
-        mpu_run_6500_self_test(&gyro, &accel, 1);
-        dmp_set_gyro_bias(&gyro);
-        dmp_set_accel_bias(&accel);
+        mpu_run_6500_self_test(gyro, accel, 1);
+        Serial.println(gyro[0]);
+        Serial.println(gyro[1]);
+        Serial.println(gyro[2]);
+        Serial.println(accel[0]);
+        Serial.println(accel[1]);
+        Serial.println(accel[2]);
         // mpu_set_gyro_bias_reg(gyro);
         // mpu_set_accel_bias_6500_reg(accel);
     }
