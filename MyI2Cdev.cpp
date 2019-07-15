@@ -108,7 +108,7 @@ int8_t i2c_read_bytes(uint8_t devAddr, uint8_t regAddr, uint8_t length, uint8_t 
     // 发送读取地址
     i2c_write[currentPort](regAddr);
     // 发送停止信号
-    i2c_stop[currentPort]();
+    // i2c_stop[currentPort]();
     // 开始新的i2c连接，读取数据
     if (!i2c_rep_start[currentPort]((devAddr <<1 | I2C_READ))){
         return -2;
