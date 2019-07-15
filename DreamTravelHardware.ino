@@ -243,9 +243,11 @@ void handleSetDmpBias(){
         Serial.print(i);
         Serial.print("---0x68:");
         Serial.println(init_device());
-        mpu_run_6500_self_test(&gyro, &accel, 0);
-        dmp_set_gyro_bias(&gyro);
-        dmp_set_accel_bias(&accel);
+        mpu_run_6500_self_test(gyro, accel, 0);
+        dmp_set_gyro_bias(gyro);
+        dmp_set_accel_bias(accel);
+        // mpu_set_gyro_bias_reg(gyro);
+        // mpu_set_accel_bias_6500_reg(accel);
 
         // 访问第二个mpu
         set_dev_addr(0x69);
@@ -255,6 +257,8 @@ void handleSetDmpBias(){
         mpu_run_6500_self_test(&gyro, &accel, 0);
         dmp_set_gyro_bias(&gyro);
         dmp_set_accel_bias(&accel);
+        // mpu_set_gyro_bias_reg(gyro);
+        // mpu_set_accel_bias_6500_reg(accel);
     }
 
 }
