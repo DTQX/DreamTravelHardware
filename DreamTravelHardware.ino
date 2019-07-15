@@ -232,7 +232,7 @@ void initInterrupt(){
 }
 
 void handleSetDmpBias(){
-    long gyro, accel;
+    long gyro[3], accel[3];
     Serial.println("set dmp bias");
     for(uint8_t i = 0; i< I2C_NUM; i++){
         // 设置当前端口 

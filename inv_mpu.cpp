@@ -2560,12 +2560,12 @@ int mpu_run_6500_self_test(long *gyro, long *accel, unsigned char debug)
         dmp_was_on = 0;
 
     /* Get initial settings. */
-    // mpu_get_gyro_fsr(&gyro_fsr);
-    // mpu_get_accel_fsr(&accel_fsr);
-    // mpu_get_lpf(&lpf);
-    // mpu_get_sample_rate(&sample_rate);
-    // sensors_on = st.chip_cfg.sensors;
-    // mpu_get_fifo_config(&fifo_sensors);
+    mpu_get_gyro_fsr(&gyro_fsr);
+    mpu_get_accel_fsr(&accel_fsr);
+    mpu_get_lpf(&lpf);
+    mpu_get_sample_rate(&sample_rate);
+    sensors_on = st.chip_cfg.sensors;
+    mpu_get_fifo_config(&fifo_sensors);
 
     if(debug)
     	log_i("Retrieving Biases\r\n");
@@ -2627,19 +2627,19 @@ restore:
 	if(debug)
 		log_i("Exiting HWST\n");
 	/* Set to invalid values to ensure no I2C writes are skipped. */
-	// st.chip_cfg.gyro_fsr = 0xFF;
-	// st.chip_cfg.accel_fsr = 0xFF;
-	// st.chip_cfg.lpf = 0xFF;
-	// st.chip_cfg.sample_rate = 0xFFFF;
-	// st.chip_cfg.sensors = 0xFF;
-	// st.chip_cfg.fifo_enable = 0xFF;
-	// st.chip_cfg.clk_src = INV_CLK_PLL;
-	// mpu_set_gyro_fsr(gyro_fsr);
-	// mpu_set_accel_fsr(accel_fsr);
-	// mpu_set_lpf(lpf);
-	// mpu_set_sample_rate(sample_rate);
-	// mpu_set_sensors(sensors_on);
-	// mpu_configure_fifo(fifo_sensors);
+	st.chip_cfg.gyro_fsr = 0xFF;
+	st.chip_cfg.accel_fsr = 0xFF;
+	st.chip_cfg.lpf = 0xFF;
+	st.chip_cfg.sample_rate = 0xFFFF;
+	st.chip_cfg.sensors = 0xFF;
+	st.chip_cfg.fifo_enable = 0xFF;
+	st.chip_cfg.clk_src = INV_CLK_PLL;
+	mpu_set_gyro_fsr(gyro_fsr);
+	mpu_set_accel_fsr(accel_fsr);
+	mpu_set_lpf(lpf);
+	mpu_set_sample_rate(sample_rate);
+	mpu_set_sensors(sensors_on);
+	mpu_configure_fifo(fifo_sensors);
 
 	if (dmp_was_on)
 		mpu_set_dmp_state(1);
