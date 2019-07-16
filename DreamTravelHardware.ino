@@ -28,9 +28,6 @@
 
 #define I2C_NUM_LOCAL 1
 
-// set dmp bias interrupt pin
-#define SetBiasIntPin 20
-
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 // #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
@@ -125,9 +122,6 @@ void loop() {
     // 发送一个完整数据包
     // sendData();
 
-    if(digitalRead(SetBiasIntPin) == LOW){
-        handleSetDmpBias();
-    }
 
     // 保证发送频率
     // while( millis() - lastSendTime < intervalTime);
@@ -227,50 +221,6 @@ void initDevice(){
     packetSize = dmp_get_packet_length();
 }
 
-// 初始化中断
-void initInterrupt(){
-    pinMode(SetBiasIntPin, INPUT_PULLUP);
-    // attachInterrupt(digitalPinToInterrupt(SetBiasIntPin), handleSetDmpBias, LOW);
-}
-
-void handleSetDmpBias(){
-    long gyro[3], accel[3];
-    Serial.println("set dmp bias");
-    for(uint8_t i = 0; i< I2C_NUM_LOCAL; i++){
-        // 设置当前端口 
-        setCurrentPort(i);
-        
-        // 访问第一个mpu
-        set_dev_addr(0x68);
-        Serial.print(i);
-        Serial.print("---0x68:");
-        mpu_run_6500_self_test(gyro, accel, 1);
-        Serial.println(gyro[0]);
-        Serial.println(gyro[1]);
-        Serial.println(gyro[2]);
-        Serial.println(accel[0]);
-        Serial.println(accel[1]);
-        Serial.println(accel[2]);
-        // mpu_set_gyro_bias_reg(gyro);
-        // mpu_set_accel_bias_6500_reg(accel);
-        
-
-        // 访问第二个mpu
-        set_dev_addr(0x69);
-        Serial.print(i);
-        Serial.print("---0x69:");
-        mpu_run_6500_self_test(gyro, accel, 1);
-        Serial.println(gyro[0]);
-        Serial.println(gyro[1]);
-        Serial.println(gyro[2]);
-        Serial.println(accel[0]);
-        Serial.println(accel[1]);
-        Serial.println(accel[2]);
-        // mpu_set_gyro_bias_reg(gyro);
-        // mpu_set_accel_bias_6500_reg(accel);
-    }
-
-}
 
 // 获取euler
 uint8_t dmpGetEuler(float *data, Quaternion * q) {
