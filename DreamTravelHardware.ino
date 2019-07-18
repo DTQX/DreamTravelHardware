@@ -1,4 +1,4 @@
- 
+  
 /** mpu采样率 Hz;  arduino数据发送频率 Hz
  *
  *  
@@ -18,7 +18,7 @@
 // #include "Wire.h"
 
 // 开启调试
- #define DEBUG
+//  #define DEBUG
 
 // 串口相关
 #define COM_RATE (115200)   // 串口通信速率
@@ -26,14 +26,14 @@
 // mpu电源控制pin
 #define MPU_POWER 21
 
-#define I2C_NUM_LOCAL 1
+#define I2C_NUM_LOCAL 3
 
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
 // #define MPU_DATA_SIZE 16     // 要发送的一个mpu的数据大小
-const uint8_t START_CODE_1=88;   // 数据包开始标志
+const uint8_t START_CODE=88;   // 数据包开始标志
 const uint8_t CODE_LENGTH = 2;   // 标志符长度
-const uint8_t START_CODE_2=44;    // 数据表介绍标志
+const uint8_t END_CODE=44;    // 数据表介绍标志
 const uint8_t intervalTime = 10;    // 数据发送间隔时间，单位ms
 const uint16_t PACKET_BUFFER_LENGTH = (I2C_NUM_LOCAL * 2) * MPU_DATA_SIZE + 2 * CODE_LENGTH ;   //  TODO 替换成数字 ， 完整数据包的长度，包括标志符
 uint8_t lastPacket[PACKET_BUFFER_LENGTH] = {0};     //储存上一次正确的quat
@@ -79,13 +79,11 @@ void setup() {
     // initialize device
     initDevice();
 
-    initInterrupt();
-
     // 设置开始、结束标志符
-    lastPacket[0] = START_CODE_1;
-    lastPacket[1] = START_CODE_1;
-    lastPacket[PACKET_BUFFER_LENGTH -2] = START_CODE_2;
-    lastPacket[PACKET_BUFFER_LENGTH -1] = START_CODE_2;
+    lastPacket[0] = START_CODE;
+    lastPacket[1] = START_CODE;
+    lastPacket[PACKET_BUFFER_LENGTH -2] = END_CODE;
+    lastPacket[PACKET_BUFFER_LENGTH -1] = END_CODE;
     
 //     // 等待开始
 //     // Serial.println(F("\nSend any character to begin DMP programming: "));
@@ -111,16 +109,16 @@ void loop() {
         // 设置当前端口 
         setCurrentPort(i);
 
-        // set_dev_addr(0x68);
-        // // 更新lastPacket
-        // updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
+        set_dev_addr(0x68);
+        // 更新lastPacket
+        updateOneLastPacket( 2 * i * MPU_DATA_SIZE + CODE_LENGTH);
 
         set_dev_addr(0x69);
         // 更新lastPacket
         updateOneLastPacket( (2 * i + 1) * MPU_DATA_SIZE + CODE_LENGTH);
     }
     // 发送一个完整数据包
-    // sendData();
+    sendData();
 
 
     // 保证发送频率
@@ -149,7 +147,7 @@ uint8_t updateOneLastPacket(uint16_t startIndex){
     lastPacket[startIndex + 6] = fifoBuffer[12];
     lastPacket[startIndex + 7] = fifoBuffer[13];
 
-    formateOutput();
+    // formateOutput();
 
     return 0;
 }
@@ -161,7 +159,8 @@ void sendData(){
 
     #ifdef DEBUG
     for(uint8_t j = 0; j < PACKET_BUFFER_LENGTH; j++){
-        Serial.print(lastPacket[j]);
+        Serial.print(lastPacket[j], HEX);
+        Serial.print(" ");
     }
     Serial.println();
     #else
