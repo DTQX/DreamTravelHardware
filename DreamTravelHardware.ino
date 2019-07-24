@@ -24,9 +24,9 @@
 #define COM_RATE (115200)   // 串口通信速率
 
 // mpu电源控制pin
-#define MPU_POWER 21
+#define MPU_POWER 16
 
-#define I2C_NUM_LOCAL 3
+#define I2C_NUM_LOCAL 1
 
 // 数据发送相关
 #define MPU_DATA_SIZE 8     // 要发送的一个mpu的数据大小
@@ -78,6 +78,7 @@ void setup() {
 
     // initialize device
     initDevice();
+    // getBias();
 
     // 设置开始、结束标志符
     lastPacket[0] = START_CODE;
@@ -218,6 +219,49 @@ void initDevice(){
 
     // 获取dmp数据包大小
     packetSize = dmp_get_packet_length();
+    Serial.print("packetSize:");
+    Serial.println(packetSize);
+}
+
+void getBias(){
+    my_i2c_init();
+
+    Serial.println(F("Initializing I2C devices..."));
+    // 初始化mpu数据结构
+    dmp_init_struct();
+    mpu_init_struct();
+    long gyro[3], accel[3];
+    for(uint8_t i = 0; i< I2C_NUM_LOCAL; i++){
+        // 设置当前端口 
+        setCurrentPort(i);
+
+        // 访问第一个mpu
+        set_dev_addr(0x68);
+        Serial.print(i);
+        Serial.print("---0x68:");
+        Serial.println(mpu_run_6500_self_test(gyro, accel, 1));
+        Serial.println(gyro[0]);
+        Serial.println(gyro[1]);
+        Serial.println(gyro[2]);
+        Serial.println(accel[0]);
+        Serial.println(accel[1]);
+        Serial.println(accel[2]);
+        
+        // // 访问第二个mpu
+        // set_dev_addr(0x69);
+        // Serial.print(i);
+        // Serial.print("---0x69:");
+        // Serial.println(mpu_run_6500_self_test(gyro, accel, 1));
+        // Serial.println(gyro[0]);
+        // Serial.println(gyro[1]);
+        // Serial.println(gyro[2]);
+        // Serial.println(accel[0]);
+        // Serial.println(accel[1]);
+        // Serial.println(accel[2]);
+    }
+
+    // 获取dmp数据包大小
+    packetSize = dmp_get_packet_length();
 }
 
 
@@ -244,14 +288,6 @@ void formateOutput(){
     q.z = quat[3] / QUAT_SENS;
     dmpGetEuler(euler, &q);
 
-    // Serial.print(index);
-    Serial.print(" --- euler:\t");
-    Serial.print(euler[0] * 180/M_PI);
-    Serial.print("\t");
-    Serial.print(euler[1] * 180/M_PI);
-    Serial.print("\t");
-    Serial.println(euler[2] * 180/M_PI);
-
     Serial.print(" --- Quat :");
     
     Serial.print(q.w);
@@ -262,6 +298,16 @@ void formateOutput(){
     Serial.print("  ");
     Serial.print(q.z);
     Serial.print("  ");
+
+    // Serial.print(index);
+    Serial.print(" --- euler:\t");
+    Serial.print(euler[0] * 180/M_PI);
+    Serial.print("\t");
+    Serial.print(euler[1] * 180/M_PI);
+    Serial.print("\t");
+    Serial.println(euler[2] * 180/M_PI);
+
+    
 
     // if(index == 5){
     //     Serial.println();

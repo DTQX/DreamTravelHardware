@@ -1595,7 +1595,7 @@ int init_device(){
         
         return -7;
     }
-    // long gyro[3]={10138, 1570, -74563}, accel[3]={3294, -2827, 2038};
+    // long gyro[3]={543451, -240819, -63314}, accel[3]={6422, -53343, 1335};
     // mpu_set_gyro_bias_reg(gyro);
     // mpu_set_accel_bias_6500_reg(accel);
         
@@ -1675,7 +1675,8 @@ int init_device(){
         
     //     return -12;
     // }
-    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT)){
+    if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT |  DMP_FEATURE_TAP | 
+        DMP_FEATURE_ANDROID_ORIENT | DMP_FEATURE_GYRO_CAL)){
         Serial.print(F("dmp_enable_feature error"));
         
         return -12;

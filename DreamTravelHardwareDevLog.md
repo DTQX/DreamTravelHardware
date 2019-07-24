@@ -1,3 +1,6 @@
+## 2019.7.20
+    1.设置bias对dmp无效
+
 ## 2019.7.18
     1.mpu bias保存/获取完成，且测试完成，下一步挑选稳定的mpu进行同步测试
 
@@ -20,6 +23,7 @@
     arduino zero ：ATSAMD21G18 11元  48 MHz
     arduino mega2560 ： ATMEGA2560  21元  16mhz
     ARDUINO DUE ： AT91SAM3X8E  30元  84mhz
+                STM32F103C8T6 5.7元   72mhz
 
 ## 2019.7.1
     1.已解决i2c挂多个设备的问题，原硬件i2c上有一个10k的上拉电阻

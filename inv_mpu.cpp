@@ -70,8 +70,8 @@
 #endif                          /* #if defined AK8975_SECONDARY */
 #endif                          /* #if defined MPU9150 */
 
-// #define MPU6050
-#define MPU6500
+#define MPU6050
+// #define MPU6500
 
 #if !defined MPU6050 && !defined MPU9150 && !defined MPU6500 && !defined MPU9250
 #error  Which gyro are you using? Define MPUxxxx in your compiler options.
