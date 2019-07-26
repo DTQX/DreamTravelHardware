@@ -7,6 +7,7 @@
 // #define MPU_NUM (16)
 // #define MPU_NUM (2)  // 测试用
 
+
 //bone name , mpu AD0 pin
 // FName("upperarm_l"),FName("lowerarm_l"),FName("hand_l")
 #define upperarm_l (22)
